@@ -21,13 +21,13 @@ use Apache::Session::FileStore;
 sub get_object_store {
     my $self = shift;
 
-    return new Apache::Session::FileStore;
+    return new Apache::Session::FileStore $self;
 }
 
 sub get_lock_manager {
     my $self = shift;
     
-    return new Apache::Session::SysVSemaphoreLocker;
+    return new Apache::Session::SysVSemaphoreLocker $self;
 }
 
 1;

@@ -13,12 +13,23 @@ use strict;
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
 
-$Apache::Session::SysVSemaphoreLocker::sem_key = 32818;
+$Apache::Session::SysVSemaphoreLocker::nsems = 32; #good for linux, bad for solaris
+$Apache::Session::SysVSemaphoreLocker::sem_key = 31818;
 
 sub new {
-    my $class = shift;
+    my $class   = shift;
+    my $session = shift;
     
-    return bless {read => 0, write => 0, sem => undef}, $class;
+    my $nsems = $session->{args}->{NSems} ||
+        $Apache::Session::SysVSemaphoreLocker::nsems;
+    
+    my $read_sem = int((hex substr($session->{data}->{_session_id}, 0, 1))*($nsems/32));
+
+    my $sem_key = $session->{args}->{SemaphoreKey} ||
+        $Apache::Session::SysVSemaphoreLocker::sem_key;
+
+    return bless {read => 0, write => 0, sem => undef, nsems => $nsems, 
+        read_sem => $read_sem, sem_key => $sem_key}, $class;
 }
 
 sub acquire_read_lock  {
@@ -28,18 +39,13 @@ sub acquire_read_lock  {
     return if $self->{read};
     die if $self->{write};
 
-    if (!$self->{sem}) {
-        my $sem_key = $session->{args}->{SemaphoreKey} ||
-            $Apache::Session::SysVSemaphoreLocker::sem_key;
-    
-        $self->{sem} = new IPC::Semaphore($sem_key, 32, IPC_CREAT | S_IRWXU)
-            || die $!;
+    if (!$self->{sem}) {    
+        $self->{sem} = new IPC::Semaphore($self->{sem_key}, $self->{nsems},
+            IPC_CREAT | S_IRWXU) || die $!;
     }
     
-    my $read_sem = hex substr($session->{data}->{_session_id}, 0, 1);
-
-    $self->{sem}->op($read_sem + 16, 0, SEM_UNDO,
-                     $read_sem,      1, SEM_UNDO);
+    $self->{sem}->op($self->{read_sem} + $self->{nsems}/2, 0, SEM_UNDO,
+                     $self->{read_sem},                    1, SEM_UNDO);
     
     $self->{read} = 1;
 }
@@ -51,20 +57,15 @@ sub acquire_write_lock {
     return if($self->{write});
 
     if (!$self->{sem}) {
-        my $sem_key = $session->{args}->{SemaphoreKey} ||
-            $Apache::Session::SysVSemaphoreLocker::sem_key;
-    
-        $self->{sem} = new IPC::Semaphore($sem_key, 32, IPC_CREAT | S_IRWXU)
-            || die $!;
+        $self->{sem} = new IPC::Semaphore($self->{sem_key}, $self->{nsems}, 
+            IPC_CREAT | S_IRWXU) || die $!;
     }
     
     $self->release_read_lock($session) if $self->{read};
 
-    my $read_sem = (hex substr($session->{data}->{_session_id}, 0, 1));
-
-    $self->{sem}->op($read_sem,      0, SEM_UNDO,
-                     $read_sem + 16, 0, SEM_UNDO,
-                     $read_sem + 16, 1, SEM_UNDO);
+    $self->{sem}->op($self->{read_sem},                    0, SEM_UNDO,
+                     $self->{read_sem} + $self->{nsems}/2, 0, SEM_UNDO,
+                     $self->{read_sem} + $self->{nsems}/2, 1, SEM_UNDO);
     
     $self->{write} = 1;
 }
@@ -75,9 +76,7 @@ sub release_read_lock  {
     
     die unless $self->{read};
 
-    my $read_sem = (hex substr($session->{data}->{_session_id}, 0, 1));
-
-    $self->{sem}->op($read_sem, -1, SEM_UNDO);
+    $self->{sem}->op($self->{read_sem}, -1, SEM_UNDO);
     
     $self->{read} = 0;
 }
@@ -88,12 +87,11 @@ sub release_write_lock {
     
     die unless $self->{write};
     
-    my $read_sem = (hex substr($session->{data}->{_session_id}, 0, 1));
-
-    $self->{sem}->op($read_sem + 16, -1, SEM_UNDO);
+    $self->{sem}->op($self->{read_sem} + $self->{nsems}/2, -1, SEM_UNDO);
 
     $self->{write} = 0;
 }
+
 sub release_all_locks  {
     my $self    = shift;
     my $session = shift;

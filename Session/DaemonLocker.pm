@@ -7,23 +7,14 @@
 #
 ############################################################################
 
-package Apache::Session::Daemon;
-use Apache::Session ();
-@ISA=qw(Apache::Session);
+package Apache::Session::DaemonLocker;
 
-$Apache::Session::Daemon::VERSION = '0.00';
-
-use Carp;
-use Storable qw(nfreeze thaw);
 use IO::Socket;
 use IO::Select;
 use POSIX;
-use MD5;
-use strict;
 
 use constant HOST   => $ENV{'SESSION_DAEMON_HOST'} || '127.0.0.1';
 use constant PORT   => $ENV{'SESSION_DAEMON_PORT'} || '2015';
-use constant SECRET => 'secret';
 
 BEGIN { 
 
@@ -34,19 +25,108 @@ BEGIN {
       Proto    => 'tcp'
       );
     warn "Trying to create socket to ".HOST." on ".PORT;
-    die "Main socket could not be created. $!" unless $Apache::Session::Daemon::sock;
-
-#    fcntl( $Apache::Session::Daemon::sock, F_SETFL(), O_NONBLOCK());
   }
   
   create_sock();
 };
 
-sub options {
-  { autocommit => 1,
-    lifetime   => $ENV{'SESSION_LIFETIME'}
-  };
+sub new {
+    my $class = shift;
+    
+    return bless { read => 0, write => 0 }, $class;
 }
+
+sub acquire_read_lock {
+    my $self    = shift;
+    my $session = shift;
+    
+    return if $self->{read};
+    die if $self->{write};
+    
+    sock_write($Apache::Session::Daemon::sock, 
+        "S".$session->{data}->{_session_id}, 17);
+    
+    $self->{read} = 1;
+}
+
+sub acquire_write_lock {
+    my $self    = shift;
+    my $session = shift;
+    
+    return if $self->{write};
+
+    if ($self->{read}) {
+        sock_write($Apache::Session::Daemon::sock, 
+            "U".$session->{data}->{_session_id}, 17);
+    }
+
+    sock_write($Apache::Session::Daemon::sock, 
+        "E".$session->{data}->{_session_id}, 17);
+    
+    $self->{write} = 1;
+}
+
+sub release_read_lock {
+    my $self    = shift;
+    my $session = shift;
+    
+    die unless $self->{read};
+    die if $self->{write};
+    
+    sock_write($Apache::Session::Daemon::sock, 
+        "U".$session->{data}->{_session_id}, 17);
+    
+    $self->{read} = 0;
+}
+
+sub release_write_lock {
+    my $self    = shift;
+    my $session = shift;
+    
+    die unless $self->{write};
+
+    sock_write($Apache::Session::Daemon::sock, 
+        "U".$session->{data}->{_session_id}, 17);
+
+    if ($self->{read}) {
+        sock_write($Apache::Session::Daemon::sock, 
+            "S".$session->{data}->{_session_id}, 17);
+    }
+    
+    $self->{write} = 0;
+}
+
+sub release_all_locks {
+    my $self    = shift;
+    my $session = shift;
+    
+    return if $self->{read};
+    
+    sock_write($Apache::Session::Daemon::sock, 
+        "U".$session->{data}->{_session_id}, 17);
+    
+    $self->{read}  = 0;
+    $self->{write} = 0;
+}
+
+sub sock_write {
+    my $sock   = shift;
+    my $msg    = shift;
+    my $length = shift;
+    
+    my $bytes_written = syswrite($sock, $msg, $length);
+    
+    if ($bytes_written == 0) {
+      warn "Locker daemon has gone away, rebuilding socket";
+      close $sock;
+      create_sock();
+      return undef;
+    }
+}
+
+1;
+
+__END__
 
 sub lock {
   my $id = shift;

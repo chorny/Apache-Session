@@ -40,13 +40,13 @@ use Apache::Session::DBIStore;
 sub get_object_store {
     my $self = shift;
 
-    return new Apache::Session::DBIStore;
+    return new Apache::Session::DBIStore $self;
 }
 
 sub get_lock_manager {
     my $self = shift;
     
-    return new Apache::Session::SysVSemaphoreLocker;
+    return new Apache::Session::SysVSemaphoreLocker $self;
 }
 
 1;

@@ -23,25 +23,11 @@ sub connection {
     my $self    = shift;
     my $session = shift;
     
+    return if (defined $self->{dbh});
+
     $self->{dbh} = DBI->connect($session->{args}->{DataSource},
         $session->{args}->{UserName}, $session->{args}->{Password},
         { RaiseError => 1, AutoCommit => 1 }) || die $DBI::errstr;
-
-    $self->{insert_sth} = 
-        $self->{dbh}->prepare_cached(qq{
-            INSERT INTO sessions (id, length, a_session) VALUES (?,?,?)});
-
-    $self->{update_sth} = 
-        $self->{dbh}->prepare_cached(qq{
-            UPDATE sessions SET length = ?, a_session = ? WHERE id = ?});
-
-    $self->{remove_sth} = 
-        $self->{dbh}->prepare_cached(qq{
-            DELETE FROM sessions WHERE id = ?});
-
-    $self->{materialize_sth} = 
-        $self->{dbh}->prepare_cached(qq{
-            SELECT a_session FROM sessions WHERE id = ?});
 }
 
 sub insert {
@@ -49,6 +35,12 @@ sub insert {
     my $session = shift;
  
     $self->connection($session);
+
+    if (!defined $self->{insert_sth}) {
+        $self->{insert_sth} = 
+            $self->{dbh}->prepare_cached(qq{
+                INSERT INTO sessions (id, length, a_session) VALUES (?,?,?)});
+    }
 
     my $serialized = freeze $session->{data};
 
@@ -68,6 +60,13 @@ sub update {
  
     $self->connection($session);
 
+    if (!defined $self->{update_sth}) {
+        $self->{update_sth} = 
+            $self->{dbh}->prepare_cached(qq{
+                UPDATE sessions SET length = ?, a_session = ? WHERE id = ?});
+    }
+
+
     my $serialized = freeze $session->{data};
 
     $self->{update_sth}->bind_param(1, length $serialized);
@@ -85,6 +84,12 @@ sub materialize {
 
     $self->connection($session);
 
+    if (!defined $self->{materialize_sth}) {
+        $self->{materialize_sth} = 
+            $self->{dbh}->prepare_cached(qq{
+                SELECT a_session FROM sessions WHERE id = ?});
+    }
+    
     $self->{materialize_sth}->bind_param(1, $session->{data}->{_session_id});
     
     $self->{materialize_sth}->execute;
@@ -105,6 +110,12 @@ sub remove {
     my $session = shift;
 
     $self->connection($session);
+
+    if (!defined $self->{remove_sth}) {
+        $self->{remove_sth} = 
+            $self->{dbh}->prepare_cached(qq{
+                DELETE FROM sessions WHERE id = ?});
+    }
 
     $self->{remove_sth}->bind_param(1, $session->{data}->{_session_id});
     

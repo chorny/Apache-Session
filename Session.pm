@@ -266,7 +266,7 @@ Steve Shreeve <shreeve@uci.edu> squashed a bug in 0.99.0 whereby
 a cleared hash or deleted key failed to set the modified bit.
 
 Peter Kaas <Peter.Kaas@lunatech.com> sent quite a bit of feedback
-with ideas for interface improvements.
+with ideas for interface improvements, and also a few bug fixes.
 
 Randy Harmon <rjharmon@uptimecomputers.com> contributed the original
 storage-independent object interface with input from:
@@ -282,7 +282,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.99.7';
+$VERSION = '0.99.8';
 
 use MD5; #yes, you need MD5.pm
 
@@ -341,7 +341,7 @@ sub TIEHASH {
 
     #Make sure that the arguments to tie make sense
         
-    &validate_id($session_id);
+    $class->validate_id($session_id);
     
     if(ref $args ne "HASH") {
         die "Additional arguments should be in the form of a hash reference";
@@ -356,7 +356,7 @@ sub TIEHASH {
         lock         => 0,
         lock_manager => undef,
         object_store => undef,
-        status       => undef
+        status       => 0
     };
     
     bless $self, $class;
@@ -370,7 +370,7 @@ sub TIEHASH {
     }
     else {
         $self->make_new;
-        $self->{data}->{_session_id} = generate_id();
+        $self->{data}->{_session_id} = $class->generate_id();
         $self->save;
     }
     
@@ -410,7 +410,7 @@ sub CLEAR {
 
     $self->make_modified;
     
-    $self->{data} = {};
+    $self->{data} = { _session_id => $self->{data}->{_session_id} };
 }
 
 sub EXISTS {
@@ -480,6 +480,7 @@ sub save {
         $self->{object_store}->remove($self);
         $self->make_synced;
         $self->make_unmodified;
+        $self->make_undeleted;
         return;
     }
     if ($self->is_modified) {
@@ -608,7 +609,7 @@ sub generate_id {
 }
 
 sub validate_id {
-    if(defined $_[0] && $_[0] =~ /[^a-f0-9]/) {
+    if(defined $_[1] && $_[1] =~ /[^a-f0-9]/) {
         die "Garbled session id";
     }
 }
