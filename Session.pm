@@ -1,241 +1,244 @@
 package Apache::Session;
 
-$Apache::Session::VERSION = '0.10';
+$Apache::Session::VERSION = '0.12';
 
-my $LIFETIME = 3600; #seconds
-if ( $ENV{'APACHE_SESSION_LIFETIME'} ) {
+use strict;
+use vars qw(@ISA);
+use MD5;
+use Carp;
+require Tie::Hash;
+
+@ISA = qw(Tie::StdHash);
+
+use constant SECRET     => $ENV{'SESSION_SECRET'}  || 'not very secret'; # bit of uncertainty
+use constant LIFETIME   => $ENV{'SESSION_LIFETIME'} || 60*60;            # expire sessions after n seconds (default: 1 hour)
+use constant ID_LENGTH  => $ENV{'SESSION_ID_LENGTH'} || 16;               # size of the session_id
+use constant MAX_TRIES  => $ENV{'SESSION_MAX_ATTEMPTS'} || 5;            # number of times to try to get a unique id
+
+sub new { 
+  my $class = shift;
+  my ( $opt ) = @_;
+
+  my $id;
+
+  # build a hash consisting of default values, plus any overrides passed in as %$opt:
+  my %t;
+  my $self = bless \%t, $class;
+  
+  $opt = $class->Options( $opt );
+    
+  my $control = tie( %t, 'Apache::TiedSession', {}, $self) || confess "couldn't create tied hash to $class";
+ 
+  $self->insert($opt);
+	$self->touch();
 	
-	$LIFETIME = $ENV{'APACHE_SESSION_LIFETIME'};
-
+  return $self;  
 }
 
-my %sessions;
 
-sub new {
+sub insert {  
+  my $self = shift;
+	my $opt = shift;
+  my $id = $self->hash( $self. rand(). SECRET );
 
-	my $package = shift;
-	my $this_session = shift;
-	my $self;
-	
-	#you'll pay for not providing a session ID
-	die "Invalid session ID in constructor" unless $this_session;
-	
-	SWITCH:	{
+  my $tries;
+  while(1) {
+    last if $self->create($id);
+    croak "Can't get a free ID" if ++$tries > MAX_TRIES;
+    $id = $self->hash($id);
+  }
 
-	($self = &create_new($this_session, $package)), last SWITCH unless $sessions{$this_session};
-	$self = $sessions{$this_session};
-	($self = &create_new($this_session, $package)), last SWITCH if ($self->{'meta'}->{'expiration_time'} < time());
-
-	}
-	
-	return $sessions{$this_session};
-	
-	sub create_new {
-	
-		my $this_session = shift;
-		my $package = shift;
-		
-		my $self = {};
-
-		$self->{'meta'}->{'id'} = $this_session;
-		$self->{'meta'}->{'lifetime'} = $LIFETIME;
-		$self->{'meta'}->{'expiration_time'} = time() + $LIFETIME;
-
-		$sessions{$this_session} = $self;
-		bless($sessions{$this_session},$package);	
-				
-		return $self;
-
-	}
-
+  $self->{'_ID'} = $id;
+	$self->{'_LIFETIME'} = $opt->{'lifetime'};
+	$self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
 }
 
-sub set {
-
-	my $self = shift;
-	my $var_name = shift;
-	my $ref_to_value = shift;
-
-	touch($self);
-
-	return 0 if (!$var_name);
-	return 0 if (!ref($ref_to_value));
-
-	$self->{'data'}->{$var_name} = $ref_to_value;
-
-	return 1;
-	
-}
-
-sub read {
-
-	my $self = shift;
-	my $var_name = shift;
-
-	touch($self);
-
-	return $self->{'data'}->{$var_name} if ($self->{'data'}->{$var_name});
-	return undef;
-}
-
-sub delete {
-
-	my $self = shift;
-	my $var_name = shift;
-	
-	touch($self);
-	
-	delete $self->{'data'}->{$var_name};
-	1;
-	
-}
-
-sub abandon {
-
-	my $self = shift;
-	my $my_id = $self->{'meta'}->{'id'};
-	
-	delete $sessions{$my_id};
-	
-	return 1;
-	
-}
-
-sub lifetime {
-
-	my $self = shift;
-	my $new_lifetime = shift;
-
-	if (defined $new_lifetime) {
-	
-		$self->{'meta'}->{'lifetime'} = $new_lifetime;
-		$self->{'meta'}->{'expiration_time'} = time() + $new_lifetime;
-		
-	}
-
-	return $self->{'meta'}->{'lifetime'};
-	
-}
-
-sub set_default_lifetime {
-
-	my $self = shift;
-	my $new_lifetime = shift;
-	
-	if (defined $new_lifetime) {
-		
-		$LIFETIME = $new_lifetime;
-		
-	}
-	
-	return $LIFETIME;
-	
-}
-
-sub expires {
-	
-	my $self = shift;
-	my $new_exp_time = shift;
-	
-	if ($new_exp_time) {
-			
-		$self->{'meta'}->{'expiration_time'} = $new_exp_time;
-		
-	}
-	
-	return $new_exp_time;
-	
+sub delete {  # delete a session-variable, or a whole session;
+  my $self = shift;
+  my $name = shift;
+  
+  if( $name ) {
+    delete $self->{$name};
+  } else {
+    $self->destroy();
+  }
 }
 
 sub touch {
-
-	my $self = shift;
-	
-	$self->{'meta'}->{'expiration_time'} = time() + $self->{'meta'}->{'lifetime'};
-
-	return $self->{'meta'}->{'expiration_time'};
-
+  my $self = shift;
+	my $control = shift;
+  
+	$self->{'_ACCESSED'} = time();
+  $self->{'_EXPIRES'} = time() + $self->{'_LIFETIME'};
+  
+	return $self->{'_EXPIRES'};
 }
 
-sub get_id {
-	
-	my $self = shift;
-	
-	return $self->{'meta'}->{'id'};
-	
+sub commit {
+  my $self = shift;
+  my $class = ref( $self ) || croak "can't commit without an object reference";
+
+  warn( "$class doesn't define a commit() method" ) if $class ne 'Apache::Session';
 }
 
-#included for future use
-sub get_error_msg {
-
-	my $self = shift;
+sub hash {
+  my $self = shift;
+  my $value = shift;
 	
-	return $self->{'meta'}->{'error_msg'};
-
+  return substr(MD5->hexhash($value),0,ID_LENGTH);
 }
 
-sub dump_to_plain_text {
+sub open {  
+	my $class = shift;
+  my $session = shift;
+  my $opt = shift;
 
-	my $self = shift;
-	my $s;
-	foreach $key (sort(keys(% { $self->{'data'} }))) {
-		
-		$s = $s."$key, $self->{'data'}->{$key}\n";
-	
-	}
+	$opt = $class->Options($opt);
 
-	return $s;
+	my $self = $session;
 
+	$self->{'_LIFETIME'} = $opt->{'lifetime'};
+	$self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
+
+	$self = $self->expire();
+  if (defined $self) { $self->touch(); }
+
+  return $self; 
 }
 
-sub dump_to_html {
+sub Options {
+  my $class = shift;
+	my $runtime = shift;
+	my $default = shift;
 
-	my $self = shift;
-	my $s;
-	
-	$s = $s."<table border=1><tr><td>Variable Name</td><td>Type</td><td>Scalar Value</td></tr>";
-	
-	foreach $key (sort(keys(% { $self->{'data'} }))) {
-		
-		$s = $s."<tr><td>$key</td><td>$self->{'data'}->{$key}</td>";
-		
-		if (ref($self->{'data'}->{$key}) eq "SCALAR") {
-			
-			$s = $s."<td>$ { $self->{'data'}->{$key} }</td></tr>\n";
-			
-		}
-		
-		else {
-		
-			$s = $s."<td>\&nbsp\;</td></tr>\n";
-			
-		}
-	
-	}
+  $default ||= { 'autocommit' => 1, 'lifetime' => LIFETIME };  
+  $runtime ||= {};
 
-	$s = $s."</table>\n";
-	
-	return $s;
+  my $it = { %$default, %$runtime };
 
+  carp( "$class: no 'autocommit' element in option list.  I hope you're commit()ing following code" ) unless exists $it->{'autocommit'};
+  
+  return $it; 
 }
 
-Apache::Status->menu_item(
+sub expire {
+  my $self = shift;
+  my $class = ref( $self ) || $self;
+	
+  if( $class ne $self ) {    #ensure the object hasn't been deleted.
 
-    'Session' => 'Session Objects',
-    sub {
-        my($r, $q) = @_;
-        my(@s) = "<TABLE border=1><TR><TD>Session ID</TD><TD>Expires</TD></TR>";
-        for (keys %sessions) {
-					my $expires = localtime(%sessions->{$_}->{'meta'}->{'expiration_time'});
-          push @s, '<TR><TD>', $_, '</TD><TD>', $expires, "</TD></TR>\n";
-        }
-        push @s, '</TABLE>';
-        return \@s;
-   }
+    if( $class->fetch( $self->{'_ID'} ) ) {
+      return $self;
+    }
+    return undef;
+  }
+  return 1;
+}
 
-) if ($INC{'Apache.pm'} && Apache->module('Apache::Status'));
+sub id {
+	my $self = shift
+	return $self->{'_ID'};
+}
 
-1;
+sub commit {
+	my $self = shift;
+	$self->store();
+}
+
+# -------------- end of package Apache::Session ---------------
+
+package Apache::TiedSession;
+
+# these define the proper methods for getting through to the proper bits of
+# information associated with a tied Apache session.  Some are for run-time
+# options and some are for persistent session information.  Think of them as
+# options for authors of storage subclasses and for users of storage
+# subclasses, respectively.
+
+use Carp;
+
+sub TIEHASH {
+	my $class = shift;
+	my $data = shift;
+	my $self = shift;
+	
+	
+	my $this = {
+		'REF_TO_SELF'=> $self,
+		'DATA'       => $data
+	};
+	
+  return bless $this, $class;
+}
+
+sub FIRSTKEY {            # start key-looping
+  my $self = shift;
+
+  my $reset = keys %{ $self->{'DATA'} };
+  each %{ $self->{'DATA'} };
+}
+
+sub NEXTKEY {            # continue key-looping (through each of 2 hashes)
+  my $self = shift;
+	my $last = shift;
+
+	return each %{ $self->{'DATA'} };
+}
+
+sub EXISTS {
+  my $self = shift;
+	my $key =shift;
+
+	return exists $self->{'DATA'}->{$key};
+}
+
+sub CLEAR {
+  carp( "CLEAR operation not supported" );
+}
+
+sub STORE {
+  my $self = shift;
+	my $key = shift;
+	my $val = shift;
+	
+  my $rv;
+  
+  $rv = $self->{'DATA'}->{$key} = $val;
+  
+	$self->{'REF_TO_SELF'}->store() if $self->{'DATA'}->{'_AUTOCOMMIT'};
+	
+  return $rv;
+}
+
+sub FETCH {
+  my $self = shift;
+	my $key = shift;
+	
+	my $rv;
+  
+	$rv = $self->{'DATA'}->{$key};
+  
+	return $rv;
+}
+
+sub DELETE {
+  warn "untested: DELETE(@_)";
+	
+  my $self = shift;
+	my $key = shift;
+
+  my $rv;
+
+  $rv = $self->{$key};    
+  $self->{$key} = undef;
+
+  $self->{'REF_TO_SELF'}->store() if $self->{'DATA'}->{'_AUTOCOMMIT'};
+
+  return $rv;
+}
+
+# ------------ end of package Apache::TiedSession
+
 
 __END__
 
@@ -245,177 +248,288 @@ __END__
 
 =head1 SYNOPSIS
 
- use Apache::Session;
- my $session = Apache::Session->new($id);
- $session->set('a_hash', { 'this' => 'that' };
- my $hashref = $session->read('a_hash');
+  use Apache::Session::Win32; # use a global hash on Win32 systems
+	use Apache::Session::DBI; # use a database for real storage
+	use Apache::Session::File; # or maybe an NFS filesystem
+	use Apache::Session::ESP; # or use your own subclass
+	
+  # Create a new unique session.
+  $session = Apache::Session::Win32->new($opts);
+
+  # fetch the session ID
+  $id      = $session->id;
+ 
+  # open an old session, or undef if not defined
+  $session = Apache::Session::Win32->open($id,$opts);
+
+  # store data into the session (can be a simple
+  # scalar, or something more complex).
+  
+  $session->{foo} = 'Hi!';
+  $session->{bar} = { complex => [ qw(list of settings) ] };
+  
+  $session->store();  # write to storage
+
 
 =head1 DESCRIPTION
 
-This module provides the Apache/mod_perl user a mechanism for storing persistent 
-user data in a global hash.  This package does not rely on any other non-standard
-Perl modules.
+This module provides the Apache/mod_perl user a mechanism for storing
+persistent user data in a global hash, which in independent of its real
+storage mechanism.  Apache::Session provides an abstract baseclass from
+which storage classes can be derived.  Existing classes include:
 
-This package should be considered alpha.  The interface is likely to change if I 
-get any feedback at all :)  Currently, this package will not work properly on unix.
-It does work on Win32 systems.  Unix operability is planned pronto.
-
-=head1 INSTALLATION
-
-Copy Session.pm to your perl/lib/site/Apache/ directory, or appropriate lib path.
+Apache::Session::Win32
+Apache::Session::File
+Apache::Session::DBI
+ 
+This package should be considered alpha, as the interface may change, and as
+it may not yet be fully functional.  The documentation and/or source code
+may be erroneous.  Use it at your own risk.
 
 =head1 ENVIRONMENT
 
-Apache::Session will respect the environment variable APACHE_SESSION_LIFETIME.
-This variable sets the default lifetime, in seconds, of a session object.  After
-the session has been idle that many seconds, it will automatically expire.  The 
-preferred way to set this default would be in your Apache http.conf:
+Apache::Session will respect the environment variables SESSION_SECRET, 
+SESSION_LIFETIME, SESSION_ID_LENGTH, and SESSION_MAX_ATTEMPTS. 
 
-PerlSetEnv APACHE_SESSION_LIFETIME 3600 #expire after 1 hour
+SESSION_SECRET is a secret string used to create MD5 hashes.  The
+default value is "not very secret", and this can be changed in the 
+source code.
 
-If the environment variable is not set, the default is 3600 seconds.
+SESSION_LIFETIME is the default lifetime of a session object in seconds.
+This value can be overridden by the calling program during session 
+creation/retrieval.  If the environment variable is not set, 3600 seconds
+is used.
+
+SESSION_ID_LENGTH is the number if characters in the session ID.  The
+default is 16.
+
+SESSION_MAX_ATTEMPTS is the number of times that the package will attempt
+to create a new session.  The package will choose a new random session ID 
+for each attempt.  The default value is 5, and should be set with regard to
+the type of real storage you will be using.
 
 =head1 USAGE
 
-=head2 Creating a session object
+=head2 Creating a new session object
 
-my $session = Apache::Session->new($session_id);
+  $opts = { 'subclass-specific' => 'option overrides' };
+  
+  $session = Apache::Session->new();  
+  $session = Apache::Session->new( $opts );  
+	$session = Apache::Session->new( { autocommit => 1 } );
 
-where $session_id is some random variable.  IMPORTANT: The method of tracking your 
-users is up to you!  You must supply Apache::Session with a valid session ID.  This 
-means that you are free to use cookies, header munging, or extra-sensory perception.
-The new() method behaves differently depending on its history:
+Note that you must consult $session->{id} to learn the session ID for
+persisting it with the client.  The new ID number is generated afresh,
+you are not allowed to specify it for a new object.
 
-CASE 1: There is no session with this session ID.  new() returns a blessed reference to
-a clean session object.
+$opts, if provided, must be a hash reference.
 
-CASE 2: A session already exists under that ID.  new() returns a blessed reference to the
-already existing session, including all data stored in that object.
+=head2 Fetching a session object
 
-CASE 3: You didn't provide a session ID.  new() dies.
+  $session = Apache::Session->open( $id );
 
-Try to avoid CASE 3.
+  $session = Apache::Session->open( $id, { autocommit => 1 , lifetime => 600} );
+
+where $id is a session handle returned by a previous call to new().  You are
+free to use cookies, header munging, or extra-sensory perception to
+determine the session id to fetch.
+
+The hashref of runtime options allows you to override the options that 
+were used during the object creation.  The standard options are "autocommit"
+and "lifetime", but your storage mechanism may define others.
+
+Autocommit defines whether your session is update in real storage every time
+it is modified, or only when you call store().  If you set autocommit to 0
+but don't call $session->store(), your changes will be lost.
+
+Lifetime changes the current lifetime of the object.
+
+=head2 Deleting a session object
+
+ $session->destroy();
+
+Deletes the session from physical storage.  
 
 =head2 Data Methods
 
 =over 4
-=item set(variable_name, reference_to_value)
 
-Data is stored in a session object using the set() method.  Set() takes two arguments:
-a variable name and a reference to a data structure.  The data structure can be as
-complex as you like, or a simple scalar.
+=item $session->{variable_name} = <value>; 
 
- $a_scalar = 'Foo';
- $session->set('a_scalar',\$a_scalar);
+=item $foo = $session->{variable_name};
 
- %a_hash = ( 'this' => 'that' );
- $session->set('a_hash',\%a_hash);
+=item $foo = delete $session->{variable_name};
 
- $session->set('anon_hash',{ 'this' => 'that' });
-
-If the variable name is omitted, or the reference is not a reference, set() returns 0.
-
-=item read(variable_name)
-
-Data is read back using the read() method.  Read takes one argument, the name of the
-variable to retrieve.  If that variable exists in the session object, a reference to
-it is returned.  Otherwise, read() returns undef.
-
- $scalar_ref = $session->read('a_scalar'); #returns a reference
- print $ { $scalar_ref };                  #OK
- print $scalar_ref;                        #probably wrong
- 
-Note that since read() returns a reference, simply doing
- 
- print $session->read('a_scalar')
- 
-will produce SCALAR(0xABCDEF).  Remember to dereference before use.
-
-A neat trick arises when you return references this way: you can store data without
-using the set() method.  This has its ups and downs.  For instance, you populate an array
-using:
-
- $array_ref = $session->read('an_array');
- for($i=0 ; $i<100; $i++) {
-      @ { $array_ref }->[$i] = "Foo";
- }
-
-Because the session object maintains a reference to this array, it automatically inherits
-the values you put in it.  However, you must be careful not to redefine variables on 
-accident.
-
-=item delete(variable_name)
-
-Deletes the session object's reference to a variable.  Always returns true.
-
- $session->delete('a_scalar');
+Hash-access is the preferred method for working with persistent session
+data.  set(), read() and delete() are no longer supported as of 0.12.
 
 =back
 
-=head2 Metadata Methods
+=head2 Metadata
 
-=over 4
+Metadata, such as the session ID, access time, lifetime, and expiration
+time are all stored in the session object.  Therefore, the following hash
+keys are reserved and should not be assigned to:
 
-=item abandon()
+_ID
+_EXPIRES
+_LIFETIME
+_ACCESSED
+_AUTOCOMMIT
 
-Abandon() takes no arguments.  Abandon destroys the package's internal reference to that
-session.  Abandon() always returns true.
+These keys can be used to retrieve the desired information.
 
-=item expires([new_expiration_time])
+my $id = $session->{'_ID'};
 
-Expires() takes one optional argument: the time that the session should die in seconds
-since the epoch.  This method allows you to specify an exact time of expiration (noon)
-instead of a relative time (one hour from now).  Expires() returns the time that the
-session will die.
+But please don't do this:
 
-=item lifetime([new_lifetime])
-
-Lifetime() takes one optional argument: the time that the session should expire in seconds 
-from now.  Lifetime() returns the lifetime after making any changes you specify.
-
-=item set_default_lifetime([default_lifetime])
-
-Set_default_lifetime() takes one optional argument: the lifetime in seconds that new session objects
-should have by default.  This is equivalent to setting the APACHE_SESSION_LIFETIME environment
-variable.  Set_default_lifetime() returns the default lifetime after making any change you
-specify.
-
-=item touch()
-
-Touch() takes no arguments.  Calling touch() gives your session a new lifetime, setting
-its expiration time to now+lifetime, as set by the lifetime() function.  Calling set() or
-read() also touch()es your session object, so you needn't usually worry about touch()ing
-it yourself.
-
-=item get_id()
-
-Get_id() returns the session ID number that specifies the calling object.  Useful for 
-debugging your user-tracking mechanism.
-
-=back
+$session->{'_ID'} = "Foo"; # same as my $id = $session->id();
 
 =head2 Other Methods
 
-These methods are meant to be useful for debugging your application.  Both of them
-dump all of the data stored in them to a table.  The table will list all of the 
-variable names stored, whether they are references to scalars, arrays, hashes, or
-whatever, and it will show the value for scalar references.
-
 =over 4
-
-=item dump_to_plain_text()
 
 =item dump_to_html()
 
-Just like they sound: dump session data to text or HTML table.
+Dumps your session hash to an HTML table.
+
+=back
+
+=head1 SUBCLASSING
+
+The Apache::Session module allows you to use the included Win32
+implementation, but also makes it easy to subclass.  Just ensure that your
+subclass includes each of the following functions:
+
+=over 4
+
+=item $class->fetch( $id )
+
+Performs the very-basic physical fetch operation.  This is used by open(),
+as well as by the base class's expire() routine, for the purpose of ensuring
+that the current session has not been deleted by the round of expire()s.
+Should return undef on failure.
+
+=item $class->open( $id [, \%options ] )
+
+Fetches a pre-existing session from physical storage.  You'll want to:
+
+ - ensure that $options is a hashref
+
+ - fetch the session from physical storage by calling fetch().
+   e.g. my $session = $class->fetch($id);
+
+ - set $self = $class->SUPER::open($session, $options )
+
+ - return $self or undef on failure.
+
+The SUPER::open() will take care of merging your class's default Options()
+with the end-user's overrides, bless()ing the reference and tie()ing the
+hash in the proper way.
+
+=back
+
+=over 4
+
+=item create( $id [, \%options ] )
+
+Creates a session, with the given id, in the physical storage.
+Create() should do some garbage collections, also.  If a request is made
+to create an object with an ID which is already taken, create() should
+check to see whether the existing object is expired, and do the right 
+thing.  Create() should return undef on failure.
+
+=item Options( \%overrides )
+
+Returns a hashref of options for your physical session storage, merging your
+class's default options with the end-user's overrides. If you wish, you may
+implement this like so:
+
+ sub Options {
+   my( $class, $runtime_opts ) = @_;
+   $class->SUPER::Options( $runtime_opts, 
+    { your => 'class', default => 'options', coded => 'here' } );
+ }  
+
+...and Apache::Session will do the work for you.
+
+Ensure that your class has a default setting for autocommit, or you'll get a
+warning.
+
+Apache::Session defines a single default setting, autocommit => 1, which may
+suit your needs fine.  In this case, you don't have to override this method.
+
+=item $session->destroy()
+
+Removes the session from the physical storage.
+
+=item $session->store()
+
+Writes the session's persistent data to physical storage.  This allows for a
+series of changes to be made to a session, followed by a commit() which
+stores those changes.
+
+This function is called if $session->{'_AUTOCOMMIT'} is true, each time a
+value is stored into the session or removed from the session.
+
+This function is duplicate in ->commit().
+
+=item $session->expire()
+
+Ensures that the given session is not expired; removes the session from
+physical storage if the session is expired.  Implementations may remove all
+expired sessions from storage, at the discretion of the implementor.  Inside
+your implementation, returning $self->SUPER::expire() will check the storage
+to ensure that the current $self was not just deleted, and will return $self
+or undef as appropriate.  $class->SUPER::expire will always return 1, in
+that there is no 'self' which might have been zapped from storage.
+
+=item $session->touch()
+
+Updates the session's physical storage to reflect a new expiration time
+based on the current clock-tick plus the session lifetime.
+
+=item $session->lock()
+
+Places a lock - in the physical storage - on the given session, ensuring
+that no other client to that physical storage may utilize the same session. 
+Returns immediately if the lock can not be acheived.
+
+This method is experimental and intended to prompt discussion and not implemented.
+
+=item $session->unlock()
+
+Removes the lock - in the physical storage - on the given session, allowing
+other clients to utilize that session.
+
+This method is experimental and intended to prompt discussion and not implemented.
 
 =back
 
 =head1 MISC
 
-Apache::Session will install a menu under your Apache::Status package, if you are 
-using it.  It will show each session's ID and expiration time (in plain format).
+=head1 BUGS
+
+=head1 TODO
+
+Create a TransHandler to translate out the session number from the URL and
+store it as the current session with the Apache request object as a note.
+
+Create a current() method which will fetch the current session if it's valid.
+
+Create a rewrite handler to translate outgoing HTML to include the current
+session number.
 
 =head1 AUTHORS
 
-Jeffrey Baker <jeff@godzilla.tamu.edu>.  Redistribute under the Perl Artistic License.
+Jeffrey Baker <jeff@godzilla.tamu.edu>, author and maintainer
+
+Randy Harmon <rjharmon@uptimecomputers.com> created storage independence
+through subclassing, with useful comments, suggestions, and source code
+from:
+
+  Bavo De Ridder <bavo@ace.ulyssis.student.kuleuven.ac.be>
+  Jules Bean <jmlb2@hermes.cam.ac.uk>
+  Lincoln Stein <lstein@cshl.org>
+
+Redistribute under the Perl Artistic License.
