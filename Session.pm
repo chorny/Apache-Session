@@ -9,7 +9,7 @@
 
 package Apache::Session;
 
-$Apache::Session::VERSION = '0.16';
+$Apache::Session::VERSION = '0.17';
 
 require Apache if exists $ENV{'MOD_PERL'};
 use MD5;
@@ -24,8 +24,9 @@ sub new {
   my $class = shift;
   my $opt   = shift;
   my $notie = shift;
+  my $id    = shift;
 
-  my ($hashref, $id) = insert( $class );
+  (my $hashref, $id) = insert( $class, $id );
   return undef unless $hashref;
 
   my $ahash = {};
@@ -67,6 +68,9 @@ sub open {
     tie (%$self, 'Apache::TiedSession', $class, $session)  ||
        confess "couldn't create tied hash to $class";
   }
+  else {
+    %$ahash = %$session ;
+  }
 
   $opt = options( $opt, $class->options() );
   foreach my $key (keys %$opt) {
@@ -90,7 +94,7 @@ sub expire {
 
 sub insert {
   my $class = shift;
-  my $id = hash( time(). {}. rand(). $$. SECRET ); #some platforms have more entropy than others
+  my $id = shift || hash( time(). {}. rand(). $$. SECRET ); #some platforms have more entropy than others
   my $hashref;
   my $tries;
 
@@ -184,11 +188,11 @@ sub create_session_object {
   my $subclass = $self->{'SUBCLASS'};
 
   if ( $id ) {
-    $sessionobj = $subclass->open ($id, $self->{'OPTIONS'}, 1) or die "Cannot open session $id";
+    $sessionobj = $subclass->open ($id, $self->{'OPTIONS'}, 1) ; 
   }
 
   if ( !$sessionobj ) {
-    $sessionobj = $subclass->new( $self->{'OPTIONS'}, 1 ) or die "Cannot create new session";
+    $sessionobj = $subclass->new( $self->{'OPTIONS'}, 1, $id ) or die "Cannot create new session";
     $self->{'ID'} = $sessionobj->id;
   }
 
@@ -226,6 +230,7 @@ sub FIRSTKEY {            # start key-looping
 
   my $so = $self->{'DATA'};
   $so = $self->create_session_object if ( !$self->{'DATA'} && $self->{'ID'} );
+  return undef if (!$so) ;	
   my $reset = scalar keys %{ $so };
   each %{ $so };
 }
@@ -233,6 +238,7 @@ sub FIRSTKEY {            # start key-looping
 sub NEXTKEY {            # continue key-looping 
   my $self = shift;
 
+  return undef if (!$self->{'DATA'}) ;	
   return each %{ $self->{'DATA'} };
 }
 
@@ -242,6 +248,7 @@ sub EXISTS {
 
   $self->create_session_object  if ( !$self->{'DATA'} && $self-> {'ID'}) ;
 
+  return undef if (!$self->{'DATA'}) ;	
   return exists $self->{'DATA'}->{$key};
 }
 
@@ -257,7 +264,8 @@ sub STORE {
   my $val  = shift;
 
   my $rv;
-  warn "Okay, got to STORE";
+  #warn "Okay, got to STORE $self->{'DATA'}";
+
   $self->create_session_object if ( !$self->{'DATA'} );
 
   $rv = $self->{'DATA'}->{$key} = $val;
@@ -280,6 +288,7 @@ sub FETCH {
   my $rv;
   $self->create_session_object if (!$self->{'DATA'} && $self-> {'ID'} );
   
+  return undef if (!$self->{'DATA'}) ;	
   $rv = $self->{'DATA'}->{$key};
   
   return $rv;
@@ -307,7 +316,7 @@ sub DELETE {
 
 sub DESTROY {
   my $self = shift;
-  warn "Now would be a good time to commit..";
+  #warn "Now would be a good time to commit..";
   $self->{'DATA'}->store if $self->{'DIRTY'};
 }
 
