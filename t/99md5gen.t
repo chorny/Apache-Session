@@ -1,61 +1,46 @@
-eval {require Digest::MD5;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Generate::MD5;
+plan skip_all => "Optional module (Digest::MD5) not installed"
+  unless eval {
+               require Digest::MD5;
+              };
 
-print "1..36\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
+
+plan tests => 33;
+
+my $package = 'Apache::Session::Generate::MD5';
+use_ok $package;
 
 my $session = {};
 
 Apache::Session::Generate::MD5::generate($session);
 
-if (exists $session->{data}->{_session_id}) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+ok exists($session->{data}->{_session_id}), 'session id created';
 
-if ((scalar keys %{$session->{data}}) == 1) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok keys(%{$session->{data}}) == 1, 'just one key in the data hashref';
 
-if ($session->{data}->{_session_id} =~ /^[0-9a-fA-F]{32}$/) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+like $session->{data}->{_session_id}, qr/^[0-9a-fA-F]{32}$/, 'id looks like hex';
 
-my $old = $session->{data}->{_session_id};
+my $old_id = $session->{data}->{_session_id};
 
 Apache::Session::Generate::MD5::generate($session);
 
-if ($old ne $session->{data}->{_session_id}) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+isnt $old_id, $session->{data}->{_session_id}, 'old session id does not match new one';
 
-my $n = 5;
-for (my $i = 1; $i <= 32; $i++) {
-    $session->{args}->{IDLength} = $i;
+for my $length (5 .. 32) {
+    $session->{args}->{IDLength} = $length;
     
     Apache::Session::Generate::MD5::generate($session);
 
-    if ($session->{data}->{_session_id} =~ /^[0-9a-fA-F]{$i}$/) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    
-    $n++;
+    like $session->{data}->{_session_id}, qr/^[0-9a-fA-F]{$length}$/,
+         "id is $length chars long";
 }
+
+chdir( $origdir );

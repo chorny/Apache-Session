@@ -1,78 +1,56 @@
-eval {require DB_File;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::DB_File;
+plan skip_all => "Optional module (DB_File) not installed"
+  unless eval {
+               require DB_File;
+              };
 
-my $mydir = int(rand(1000));
-mkdir "./$mydir", 0777;
-chdir $mydir;
+my $package = 'Apache::Session::DB_File';
 
-print "1..5\n";
+plan tests => 8;
 
-my $s = {};
+use_ok $package;
 
-tie %$s, 'Apache::Session::DB_File', undef, {
-    FileName      => './test.db',
-    LockDirectory => '.'
-};
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-if (tied %$s) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+my %session;
+my %tie_params = (
+    FileName      => './text.db',
+    LockDirectory => '.',
+);
 
-if (exists $s->{_session_id}) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+tie %session, $package, undef, { %tie_params };
 
-my $id = $s->{_session_id};
+ok( tied(%session), "The session is tied" );
 
-$s->{foo} = 'bar';
-$s->{baz} = ['tom', 'dick', 'harry'];
+ok(  exists($session{_session_id}), "Session id exists"     );
+ok( defined($session{_session_id}), "Session id is defined" );
 
-untie %$s;
-undef $s;
-$s = {};
+my $id = $session{_session_id};
 
-tie %$s, 'Apache::Session::DB_File', $id, {
-    FileName      => './test.db',
-    LockDirectory => '.'
-};
+my $foo = 'bar';
+my $baz = [ qw[tom dick harry] ];
 
-if (tied %$s) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+$session{foo} = $foo;
+$session{baz} = $baz;
 
-if ($s->{_session_id} eq $id) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+untie %session;
+undef %session;
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 5\n";
-}
-else {
-    print "not ok 5\n";
-}
+tie %session, $package, $id, { %tie_params };
 
-tied(%$s)->delete;
+ok( tied(%session), "The session is tied again" );
 
+is( $session{_session_id}, $id, "Session IDs match" );
 
-unlink "./Apache-Session-$id.lock" || die $!;
-unlink "./test.db" || die $!;
-chdir "..";
-rmdir $mydir || die $!;
+cmp_deeply $session{foo}, $foo, "Foo matches";
+cmp_deeply $session{baz}, $baz, "Baz matches";
 
+tied(%session)->delete;
+
+chdir( $origdir );

@@ -1,6 +1,17 @@
-use Apache::Session::Generate::ModUniqueId;
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-print "1..3\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
+
+plan tests => 4;
+
+my $package = 'Apache::Session::Generate::ModUniqueId';
+use_ok $package;
 
 $ENV{UNIQUE_ID} = '12345678790abcdef';
 
@@ -8,23 +19,11 @@ my $session = {};
 
 Apache::Session::Generate::ModUniqueId::generate($session);
 
-if (exists $session->{data}->{_session_id}) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+ok exists($session->{data}->{_session_id}), 'session id created';
 
-if ((scalar keys %{$session->{data}}) == 1) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok keys(%{$session->{data}}) == 1, 'just one key in the data hashref';
 
-if ($session->{data}->{_session_id} eq $ENV{UNIQUE_ID}) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+is $session->{data}->{_session_id}, $ENV{UNIQUE_ID},
+   'id matches UNIQUE_ID env param';
+
+chdir( $origdir );

@@ -1,15 +1,27 @@
-eval {require DBI; require DBD::mysql;};
-if ($@ || !$ENV{APACHE_SESSION_MAINTAINER}) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Lock::MySQL;
-use DBI;
+plan skip_all => "Optional modules (DBD::mysql, DBI) not installed"
+  unless eval {
+               require DBI;
+               require DBD::mysql;
+              };
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 
-print "1..3\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $s = {
+plan tests => 4;
+
+my $package = 'Apache::Session::Lock::MySQL';
+use_ok $package;
+
+my $session = {
     args => {
         LockDataSource => 'dbi:mysql:test',
         LockUserName   => 'test',
@@ -20,55 +32,38 @@ my $s = {
     }
 };
 
-my $l = new Apache::Session::Lock::MySQL;
-my $dbh = DBI->connect('dbi:mysql:test', 'test', '', {RaiseError => 1});
-my $sth = $dbh->prepare(q{SELECT GET_LOCK('Apache-Session-09876543210987654321098765432109', 0)});
+my $lock = $package->new;
+my $dbh  = DBI->connect('dbi:mysql:test', 'test', '', {RaiseError => 1});
+my $sth  = $dbh->prepare(q{SELECT GET_LOCK('Apache-Session-09876543210987654321098765432109', 0)});
 my $sth2 = $dbh->prepare(q{SELECT RELEASE_LOCK('Apache-Session-09876543210987654321098765432109')});
 
-$l->acquire_write_lock($s);
+$lock->acquire_write_lock($session);
 
 $sth->execute();
-my @array = $sth->fetchrow_array;
+is +($sth->fetchrow_array)[0], 0, 'could not get lock';
 
-if ($array[0] == 0) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
-
-$l->release_write_lock($s);
+$lock->release_write_lock($session);
 
 $sth->execute();
-@array = $sth->fetchrow_array;
-
-if ($array[0] == 1) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+is +($sth->fetchrow_array)[0], 1, 'could get lock';
 
 $sth2->execute;
+undef $lock;
 
-undef $l;
+$session->{args}->{LockHandle} = $dbh;
 
-$s->{args}->{LockHandle} = $dbh;
+$lock = $package->new;
 
-$l = new Apache::Session::Lock::MySQL;
-
-$l->acquire_read_lock($s);
+$lock->acquire_read_lock($session);
 
 $sth->execute();
-@array = $sth->fetchrow_array;
+$sth->execute();
+is +($sth->fetchrow_array)[0], 1, 'could get lock';
 
-if ($array[0] == 1) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+undef $lock;
 
 $sth->finish;
 $sth2->finish;
 $dbh->disconnect;
+
+chdir( $origdir );

@@ -1,3 +1,11 @@
+1.70_01    2004-09-01
+
+  - Casey West takes the pumpkin.
+  - Complete rewrite of test suite to use Test::* modules.
+  - Minor documentation tweaks.
+
+---
+
 Changes in 1.6:
 
 Fixed file age test for clean().  The previous test was never true.

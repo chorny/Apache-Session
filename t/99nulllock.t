@@ -1,23 +1,32 @@
-use Apache::Session::Lock::Null;
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-print "1..4\n";
+plan skip_all => "Optional module (Fcntl) not installed"
+  unless eval {
+               require Fcntl;
+              };
 
-my $s = {};
-my $l = new Apache::Session::Lock::Null;
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-$l->acquire_read_lock($s);
+plan tests => 4;
 
-print "ok 1\n";
+my $package = 'Apache::Session::Lock::Null';
+use_ok $package;
 
-$l->acquire_write_lock($s);
+my $session = {};
+my $lock = $package->new;
 
-print "ok 2\n";
+ok $lock->acquire_read_lock($s), 'got read';
 
-$l->release_all_locks($s);
+ok $lock->acquire_write_lock($s), 'got write';
 
-print "ok 3\n";
+ok $lock->release_all_locks($s), 'released all';
 
-undef $l;
+undef $lock;
 
-print "ok 4\n";
-
+chdir( $origdir );

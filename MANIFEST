@@ -1,7 +1,17 @@
+b/dbi.b
+b/dbinew.b
+b/dbipop.b
+b/dbstore.b
+b/flexpop.b
+b/gdbm.b
+b/mysqllock.b
+b/uuevsmime.b
 CHANGES
+eg/example.perl
 INSTALL
-MANIFEST
 Makefile.PL
+MANIFEST			This list of files
+META.yml
 README
 Session.pm
 Session/DB_File.pm
@@ -23,8 +33,8 @@ Session/Serialize/Base64.pm
 Session/Serialize/Storable.pm
 Session/Serialize/Sybase.pm
 Session/Serialize/UUEncode.pm
-Session/Store/DBI.pm
 Session/Store/DB_File.pm
+Session/Store/DBI.pm
 Session/Store/File.pm
 Session/Store/Informix.pm
 Session/Store/MySQL.pm
@@ -32,16 +42,6 @@ Session/Store/Oracle.pm
 Session/Store/Postgres.pm
 Session/Store/Sybase.pm
 Session/Sybase.pm
-TODO
-b/dbi.b
-b/dbinew.b
-b/dbipop.b
-b/dbstore.b
-b/flexpop.b
-b/gdbm.b
-b/mysqllock.b
-b/uuevsmime.b
-eg/example.perl
 t/99base64.t
 t/99dbfile.t
 t/99dbfilestore.t
@@ -60,4 +60,4 @@ t/99postgres.t
 t/99semaphore.t
 t/99storable.t
 t/99uue.t
-META.yml                                 Module meta-data (added by MakeMaker)
+TODO

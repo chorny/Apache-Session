@@ -1,10 +1,13 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Apache-Session
-version:      1.6
+version:      1.70_01
 version_from: Session.pm
 installdirs:  site
 requires:
+    Test::Deep:                    0.082
+    Test::Exception:               0.15
+    Test::More:                    0.47
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17

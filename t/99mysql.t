@@ -1,135 +1,104 @@
-eval {require DBI; require DBD::mysql;};
-if ($@ || !$ENV{APACHE_SESSION_MAINTAINER}) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::MySQL;
-use DBI;
+plan skip_all => "Optional modules (DBD::mysql, DBI) not installed"
+  unless eval {
+               require DBI;
+               require DBD::mysql;
+              };
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 
-print "1..10\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $s = {};
+plan tests => 13;
 
-tie %$s, 'Apache::Session::MySQL', undef, {
-    DataSource => 'dbi:mysql:sessions', 
-    UserName => 'test', 
-    Password => '',
+my $package = 'Apache::Session::MySQL';
+use_ok $package;
+
+my $session = {};
+
+tie %{$session}, $package, undef, {
+    DataSource     => 'dbi:mysql:sessions', 
+    UserName       => 'test', 
+    Password       => '',
     LockDataSource => 'dbi:mysql:sessions',
-    LockUserName => 'test',
-    LockPassword => ''
+    LockUserName   => 'test',
+    LockPassword   => ''
 };
 
-if (tied %$s) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if (exists $s->{_session_id}) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok exists($session->{_session_id}), 'session id exists';
 
-my $id = $s->{_session_id};
+my $id = $session->{_session_id};
 
-$s->{foo} = 'bar';
-$s->{baz} = ['tom', 'dick', 'harry'];
+my $foo = $session->{foo} = 'bar';
+my $baz = $session->{baz} = ['tom', 'dick', 'harry'];
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
-tie %$s, 'Apache::Session::MySQL', $id, {
-    DataSource => 'dbi:mysql:sessions', 
-    UserName => 'test', 
-    Password => '',
+tie %{$session}, $package, $id, {
+    DataSource     => 'dbi:mysql:sessions', 
+    UserName       => 'test', 
+    Password       => '',
     LockDataSource => 'dbi:mysql:sessions',
-    LockUserName => 'test',
-    LockPassword => ''
+    LockUserName   => 'test',
+    LockPassword   => ''
 };
 
-if (tied %$s) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if ($s->{_session_id} eq $id) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+is $session->{_session_id}, $id, 'id retrieved matches one stored';
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 5\n";
-}
-else {
-    print "not ok 5\n";
-}
+cmp_deeply $session->{foo}, $foo, "Foo matches";
+cmp_deeply $session->{baz}, $baz, "Baz matches";
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
-tie %$s, 'Apache::Session::MySQL', undef, {
-    DataSource => 'dbi:mysql:sessions', 
-    UserName => 'test', 
-    Password => '',
-    TableName => 's',
+tie %{$session}, $package, undef, {
+    DataSource     => 'dbi:mysql:sessions', 
+    UserName       => 'test', 
+    Password       => '',
+    TableName      => 's',
     LockDataSource => 'dbi:mysql:sessions',
-    LockUserName => 'test',
-    LockPassword => ''
+    LockUserName   => 'test',
+    LockPassword   => ''
 };
 
-if (tied %$s) {
-    print "ok 6\n";
-}
-else {
-    print "not ok 6\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if (exists $s->{_session_id}) {
-    print "ok 7\n";
-}
-else {
-    print "not ok 7\n";
-}
+ok exists($session->{_session_id}), 'session id exists';
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
 my $dbh = DBI->connect('dbi:mysql:sessions', 'test', '', {RaiseError => 1});
 
-tie %$s, 'Apache::Session::MySQL', $id, {Handle => $dbh, LockHandle => $dbh};
+tie %{$session}, $package, $id, {
+    Handle     => $dbh,
+    LockHandle => $dbh,
+};
 
-if (tied %$s) {
-    print "ok 8\n";
-}
-else {
-    print "not ok 8\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if ($s->{_session_id} eq $id) {
-    print "ok 9\n";
-}
-else {
-    print "not ok 9\n";
-}
+is $session->{_session_id}, $id, 'id retrieved matches one stored';
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 10\n";
-}
-else {
-    print "not ok 10\n";
-}
+cmp_deeply $session->{foo}, $foo, "Foo matches";
+cmp_deeply $session->{baz}, $baz, "Baz matches";
 
-tied(%$s)->delete;
-
+tied(%{$session})->delete;
+untie %{$session};
 $dbh->disconnect;
+
+chdir( $origdir );

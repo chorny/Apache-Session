@@ -1,91 +1,62 @@
-eval {require Fcntl;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::File;
+plan skip_all => "Optional module (Fcntl) not installed"
+  unless eval {
+               require Fcntl;
+              };
 
-my $mydir = int(rand(1000));
-mkdir "./$mydir", 0777;
-chdir $mydir;
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-print "1..6\n";
+plan tests => 9;
 
-my $s = {};
+my $package = 'Apache::Session::File';
+use_ok $package;
 
-tie %$s, 'Apache::Session::File', undef, {
+my %session;
+my %tie_params = (
     Directory     => '.',
     LockDirectory => '.'
-};
+);
 
-if (tied %$s) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+tie %session, $package, undef, { %tie_params };
 
-if (exists $s->{_session_id}) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok( tied(%session), "session is tied" );
 
-my $id = $s->{_session_id};
+ok(  exists($session{_session_id}), "session id exists" );
+ok( defined($session{_session_id}), "session id is defined" );
 
-$s->{foo} = 'bar';
-$s->{baz} = ['tom', 'dick', 'harry'];
+my $id = $session{_session_id};
 
-untie %$s;
-undef $s;
-$s = {};
+my $foo = 'bar';
+my $baz = [ qw[tom dick harry] ];
 
-tie %$s, 'Apache::Session::File', $id, {
-    Directory     => '.',
-    LockDirectory => '.'
-};
+$session{foo} = $foo;
+$session{baz} = $baz;
 
-if (tied %$s) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+untie %session;
+undef %session;
 
-if ($s->{_session_id} eq $id) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+tie %session, $package, $id, { %tie_params };
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 5\n";
-}
-else {
-    print "not ok 5\n";
-}
+ok( tied(%session), "The session is tied again" );
 
-tied(%$s)->delete;
-untie %$s;
+is( $session{_session_id}, $id, "Session IDs match" );
 
-eval {
-    tie %$s, 'Apache::Session::File', '../../../../../../../../foo', {
-        Directory     => '.',
-        LockDirectory => '.'
-    };
-};
-if ($@) {
-    print "ok 6\n";
-}
-else {
-    print "not ok 6\n";
-    untie %$s
-}
+cmp_deeply $session{foo}, $foo, "Foo matches";
+cmp_deeply $session{baz}, $baz, "Baz matches";
 
-unlink "./Apache-Session-$id.lock" || die $!;
-chdir "..";
-rmdir $mydir || die $!;
+tied(%session)->delete;
+untie %session;
+undef %session;
 
+dies_ok {
+    tie %session, $package, '../../../../../../../../foo', { %tie_params };
+} "unsafe tie detected correctly";
+
+chdir( $origdir );

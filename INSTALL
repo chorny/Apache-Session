@@ -7,7 +7,7 @@ After all of that:
 
  perl Makefile.PL
  make install
- perldoc Session
+ perldoc Apache::Session
 
 Have fun,
 Jeffrey

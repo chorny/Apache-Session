@@ -1,22 +1,28 @@
-eval {require DBI; require DBD::mysql;};
-if ($@ || !$ENV{'APACHE_SESSION_MAINTAINER'}) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Store::MySQL;
-use DBI;
+plan skip_all => "Optional modules (DBD::mysql, DBI) not installed"
+  unless eval {
+               require DBI;
+               require DBD::mysql;
+              };
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 
-use strict;
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-print "1..1\n";
+plan tests => 2;
 
-my $foo = new Apache::Session::Store::MySQL;
+my $package = 'Apache::Session::Store::MySQL';
+use_ok $package;
 
-if (ref $foo) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+my $foo = $package->new;
 
+isa_ok $foo, $package;
+
+chdir( $origdir );

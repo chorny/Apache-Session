@@ -1,14 +1,25 @@
-eval {require IPC::SysV; require IPC::Semaphore;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Lock::Semaphore;
+plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
+  unless eval {
+               require IPC::SysV;
+               require IPC::Semaphore;
+              };
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
+
+plan tests => 29;
+
+my $package = 'Apache::Session::Lock::Semaphore';
+use_ok $package;
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
-
-print "1..28\n";
 
 my $semkey = int(rand(2**15-1));
 
@@ -17,93 +28,56 @@ my $session = {
     args => {SemaphoreKey => $semkey}    
 };
 
-my $n = 1;
-
-for (my $i = 2; $i <= 8; $i += 2) {
-    $session->{args}->{NSems} = $i;
-    my $locker = new Apache::Session::Lock::Semaphore $session;
-
-    if (ref $locker) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+my $number = 1;
+for my $iter (2,4,6,8) {
+    $session->{args}->{NSems} = $iter;
+    my $locker = $package->new($session);
+    
+    isa_ok $locker, $package;
 
     $locker->acquire_read_lock($session);
     my $semnum = $locker->{read_sem};
 
-    my $sem = new IPC::Semaphore $semkey, $i, S_IRWXU;
+    my $sem = IPC::Semaphore->new($semkey, $number++, S_IRWXU);
 
-    if (ref $sem) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-        exit;
-    }
-    $n++;
-    
+    isa_ok $sem, 'IPC::Semaphore';
+
     my @sems = $sem->getall;
 
-    if ($sems[$semnum] == 1 && $sems[$semnum+$i/2] == 0) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+    ok $sems[$semnum] == 1 && $sems[$semnum+$iter/2] == 0,
+       'the semaphores seem right';
 
     $locker->acquire_write_lock($session);
 
     @sems = $sem->getall;
 
-    if ($sems[$semnum] == 0 && $sems[$semnum+$i/2] == 1) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+    ok $sems[$semnum] == 0 && $sems[$semnum+$iter/2] == 1,
+       'semaphores seem right again';
 
     $locker->release_write_lock($session);
     
     @sems = $sem->getall;
 
-    if ($sems[$semnum] == 0 && $sems[$semnum+$i/2] == 0) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+    ok $sems[$semnum] == 0 && $sems[$semnum+$iter/2] == 0,
+       'the semaphores seem right x3';
 
     $locker->acquire_write_lock($session);
     $locker->release_all_locks($session);
     
     @sems = $sem->getall;
 
-    if ($sems[$semnum] == 0 && $sems[$semnum+$i/2] == 0) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+    ok $sems[$semnum] == 0 && $sems[$semnum+$iter/2] == 0,
+       'the semaphores seem right x4';
 
     $locker->acquire_read_lock($session);
     $locker->release_all_locks($session);
     
     @sems = $sem->getall;
 
-    if ($sems[$semnum] == 0 && $sems[$semnum+$i/2] == 0) {
-        print "ok $n\n";
-    }
-    else {
-        print "not ok $n\n";
-    }
-    $n++;
+    ok $sems[$semnum] == 0 && $sems[$semnum+$iter/2] == 0,
+       'the semaphores seem right x5';
 
     $sem->remove;
 }
+
+chdir( $origdir );

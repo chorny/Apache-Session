@@ -1,73 +1,78 @@
-eval {require DB_File};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Store::DB_File;
-use DB_File;
+plan skip_all => "Optional module (DB_File) not installed"
+  unless eval {
+               require DB_File;
+              };
 
-my $mydir = int(rand(1000));
-mkdir "./$mydir", 0777;
-chdir $mydir;
+my $package = 'Apache::Session::Store::DB_File';
 
-print "1..4\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $session = {serialized => '12345', data => {_session_id => 'test1'}, args => {FileName => 'foo.dbm'}};
+my $serial  = '12345';
+my $id      = 'test1';
+my $dbfile  = 'foo.dbm';
+my $session = {
+    serialized => $serial,
+    data       => {
+                   _session_id => $id,
+                  },
+    args       => {
+                   FileName => $dbfile,
+                  },
+};
 
-my $store = new Apache::Session::Store::DB_File;
+plan tests => 13;
 
-$store->insert($session);
+use_ok $package;
+use_ok 'DB_File';
+can_ok $package, qw[new insert materialize remove];
 
-if (-e "./foo.dbm") {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+my $store = $package->new;
+isa_ok $store, $package;
+
+my $i_ret = $store->insert($session);
+is( $i_ret, $serial, "insert() returned value of serialized" );
+
+ok( -e $dbfile, 'dbm file exists' );
 
 undef $store;
 
-$store = new Apache::Session::Store::DB_File;
-$session->{serialized} = '';
-$store->materialize($session);
+$store = $package->new;
+isa_ok $store, $package;
 
-if ($session->{serialized} eq '12345') {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+$session->{serialized} = undef;
+lives_ok {
+    $store->materialize($session)
+} 'materialize did not die';
+is( $session->{serialized}, $serial, "materialized session is correct" );
 
-$session->{serialized} = 'hi';
-$store->update($session);
+my $new_serial = 'hi';
+$session->{serialized} = $new_serial;
+my $u_ret = $store->update($session);
+is( $u_ret, $new_serial, "update() returned value of new serialized" );
+
 undef $store;
 
 my %hash;
-tie %hash, 'DB_File', './foo.dbm';
-if ($hash{test1} eq 'hi') {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+tie %hash, 'DB_File', $dbfile;
 
-$store = new Apache::Session::Store::DB_File;
+is( $hash{$id}, $new_serial, "dbm file updated correctly" );
+
+$store = $package->new;
+isa_ok $store, $package;
 $store->remove($session);
 
-eval {
+dies_ok {
     $store->materialize($session);
-};
-if ($@) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+} "Can't materialize removed session";
 
 undef $store;
 
-unlink "./foo.dbm";
-
-chdir "..";
-rmdir $mydir || die $!;
+chdir( $origdir );

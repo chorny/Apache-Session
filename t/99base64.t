@@ -1,35 +1,38 @@
-eval {require MIME::Base64; require Storable;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
 
-use Apache::Session::Serialize::Base64;
+plan skip_all => "Optional modules (MIME::Base64,Storable) not installed"
+  unless eval {
+               require MIME::Base64;
+               require Storable;
+              };
 
-print "1..1\n";
+plan tests => 3;
 
-my $s = \&Apache::Session::Serialize::Base64::serialize;
-my $u = \&Apache::Session::Serialize::Base64::unserialize;
+my $package = 'Apache::Session::Serialize::Base64';
+use_ok $package;
+can_ok $package, qw[serialize unserialize];
 
-my $session = {serialized => undef, data => undef};
-my $simple  = {foo => 1, bar => 2, baz => 'quux', quux => ['foo', 'bar']};
+my $serialize   = \&{"$package\::serialize"};
+my $unserialize = \&{"$package\::unserialize"};
+
+my $session = {
+               serialized => undef,
+               data       => undef,
+              };
+my $simple  = {
+               foo  => 1,
+               bar  => 2,
+               baz  => 'quux',
+               quux => ['foo', 'bar'],
+              };
 
 $session->{data} = $simple;
 
-&$s($session);
+$serialize->($session);
 
 $session->{data} = undef;
 
-&$u($session);
+$unserialize->($session);
 
-if ($session->{data}->{foo} == 1 &&
-    $session->{data}->{bar} == 2 &&
-    $session->{data}->{baz} eq 'quux' &&
-    $session->{data}->{quux}->[0] eq 'foo' &&
-    $session->{data}->{quux}->[1] eq 'bar') {
-    
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+cmp_deeply $session->{data}, $simple, "Session was deserialized correctly";

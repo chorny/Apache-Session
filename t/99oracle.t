@@ -1,125 +1,102 @@
-eval {require DBI; require DBD::Oracle;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Oracle;
+plan skip_all => "Optional modules (DBD::Oracle, DBI) not installed"
+  unless eval {
+               require DBI;
+               require DBD::Oracle;
+              };
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 
-print "1..10\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $s = {};
+plan tests => 13;
 
-tie %$s, 'Apache::Session::Oracle', undef, {
+my $package = 'Apache::Session::Oracle';
+use_ok $package;
+
+my $session = {};
+
+tie %{$session}, $package, undef, {
     DataSource => "dbi:Oracle:$ENV{ORACLE_SID}", 
     UserName => $ENV{AS_ORACLE_USER}, 
     Password => $ENV{AS_ORACLE_PASS},
     Commit   => 1
 };
 
-if (tied %$s) {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if (exists $s->{_session_id}) {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok exists($session->{_session_id}), 'session id exists';
 
-my $id = $s->{_session_id};
+my $id = $session->{_session_id};
 
-$s->{foo} = 'bar';
-$s->{baz} = ['tom', 'dick', 'harry'];
+my $foo = $session->{foo} = 'bar';
+my $baz = $session->{baz} = ['tom', 'dick', 'harry'];
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
-tie %$s, 'Apache::Session::Oracle', $id, {
+tie %{$session}, $package, $id, {
     DataSource => "dbi:Oracle:$ENV{ORACLE_SID}", 
     UserName => $ENV{AS_ORACLE_USER}, 
     Password => $ENV{AS_ORACLE_PASS},
     Commit   => 1
 };
 
-if (tied %$s) {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if ($s->{_session_id} eq $id) {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+is $session->{_session_id}, $id, 'id retrieved matches one stored';
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 5\n";
-}
-else {
-    print "not ok 5\n";
-}
+cmp_deeply $session->{foo}, $foo, "Foo matches";
+cmp_deeply $session->{baz}, $baz, "Baz matches";
 
-$s->{long} = 'A'x(10*2**10);
+$session->{long} = 'A'x(10*2**10);
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
 my $dbh = DBI->connect("dbi:Oracle:$ENV{ORACLE_SID}", $ENV{AS_ORACLE_USER}, $ENV{AS_ORACLE_PASS}, {RaiseError => 1, AutoCommit => 0});
 
-tie %$s, 'Apache::Session::Oracle', $id, {Handle => $dbh, Commit => 0, LongReadLen => 20*2**10};
+tie %{$session}, $package, $id, {
+    Handle      => $dbh,
+    Commit      => 0,
+    LongReadLen => 20*2**10,
+};
 
-if (tied %$s) {
-    print "ok 6\n";
-}
-else {
-    print "not ok 6\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if ($s->{long} eq 'A'x(10*2**10)) {
-    print "ok 7\n";
-}
-else {
-    print "not ok 7\n";
-}
+is $session->{long}, 'A'x(10*2**10), 'long read worked';
 
-delete $s->{long};
+delete $session->{long};
 
-untie %$s;
-undef $s;
-$s = {};
+untie %{$session};
+undef $session;
+$session = {};
 
-tie %$s, 'Apache::Session::Oracle', $id, {Handle => $dbh, Commit => 0};
+tie %{$session}, $package, $id, {
+    Handle => $dbh,
+    Commit => 0,
+};
 
-if (tied %$s) {
-    print "ok 8\n";
-}
-else {
-    print "not ok 8\n";
-}
+ok tied(%{$session}), 'session tied';
 
-if ($s->{_session_id} eq $id) {
-    print "ok 9\n";
-}
-else {
-    print "not ok 9\n";
-}
+is $session->{_session_id}, $id, 'id retrieved matches one stored';
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
-    print "ok 10\n";
-}
-else {
-    print "not ok 10\n";
-}
+cmp_deeply $session->{foo}, $foo, "Foo matches";
+cmp_deeply $session->{baz}, $baz, "Baz matches";
+
+tied(%{$session})->delete;
+untie %{$session};
 
 $dbh->commit;
 $dbh->disconnect;
+
+chdir( $origdir );

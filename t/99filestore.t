@@ -1,98 +1,76 @@
-eval {require Fcntl;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Store::File;
+plan skip_all => "Optional module (Fcntl) not installed"
+  unless eval {
+               require Fcntl;
+              };
 
-my $mydir = int(rand(1000));
-mkdir "./$mydir", 0777;
-chdir $mydir;
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-print "1..6\n";
+plan tests => 7;
 
-my $session = {serialized => '12345', data => {_session_id => 'test1'}};
+my $package = 'Apache::Session::Store::File';
+use_ok $package;
+
+my $session = {
+    serialized => 12345,
+    data => { _session_id => 'test1'},
+};
 
 $Apache::Session::Store::File::Directory = '.';
+$Apache::Session::Store::File::Directory = '.';
 
-my $store = new Apache::Session::Store::File;
+my $store = Apache::Session::Store::File->new;
 
 $store->insert($session);
 
-if (-e "./test1") {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+ok( -e "./test1", "Store file exists" );
 
 undef $store;
 
-open (TEST, '<./test1') || die $!;
+open (TEST, '<./test1');
 
-my $foo;
-while (<TEST>) {$foo .= $_};
+my $store_contents = do { local $/; <TEST> };
 
-if ($foo eq $session->{serialized} && $foo eq '12345') {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok( $store_contents eq $session->{serialized} && $store_contents == 12345,
+    "Store contents are okay" );
 
 close TEST;
 
-$store = new Apache::Session::Store::File;
+$store = Apache::Session::Store::File->new;
 $session->{serialized} = '';
 $store->materialize($session);
 
-if ($session->{serialized} eq '12345') {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+ok( $session->{serialized} == 12345, 'restoring from file worked' );
 
 $session->{serialized} = 'hi';
 $store->update($session);
 undef $store;
 
-open (TEST, '<./test1') || die $!;
+open (TEST, '<./test1');
 
-$foo = '';
-while (<TEST>) {$foo .= $_};
+undef $store_contents;
+$store_contents = do { local $/; <TEST> };
 
-if ($foo eq $session->{serialized} && $foo eq 'hi') {
-    print "ok 4\n";
-}
-else {
-    print "not ok 4\n";
-}
+ok( $store_contents eq $session->{serialized} && $store_contents eq 'hi',
+    'Store contents are okay' );
 
 close TEST;
 
-$store = new Apache::Session::Store::File;
+undef $store;
+$store = Apache::Session::Store::File->new;
 $store->remove($session);
 
-if (-e "./test1") {
-    print "not ok 5\n";
-}
-else {
-    print "ok 5\n";
-}
+ok( !-e "./test1", 'Session removed properly' );
 
-eval {
+dies_ok {
     $store->materialize($session);
-};
-if ($@) {
-    print "ok 6\n";
-}
-else {
-    print "not ok 6\n";
-}
+} "could not materialize nonexistent session";    
 
-unlink "./test1";
-
-chdir "..";
-rmdir $mydir || die $!;
+chdir( $origdir );

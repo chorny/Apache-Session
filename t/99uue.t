@@ -1,35 +1,45 @@
-eval {require Storable;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
 
-use Apache::Session::Serialize::UUEncode;
+plan skip_all => "Optional module (Storable) not installed"
+  unless eval {
+               require Storable;
+              };
 
-print "1..1\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $s = \&Apache::Session::Serialize::UUEncode::serialize;
-my $u = \&Apache::Session::Serialize::UUEncode::unserialize;
+plan tests => 2;
 
-my $session = {serialized => undef, data => undef};
-my $simple  = {foo => 1, bar => 2, baz => 'quux', quux => ['foo', 'bar']};
+my $package = 'Apache::Session::Serialize::UUEncode';
+use_ok $package;
+
+my $serial = \&Apache::Session::Serialize::UUEncode::serialize;
+my $unserial = \&Apache::Session::Serialize::UUEncode::unserialize;
+
+my $session = {
+    serialized => undef,
+    data       => undef,
+};
+my $simple  = {
+    foo  => 1,
+    bar  => 2,
+    baz  => 'quux',
+    quux => ['foo', 'bar'],
+};
 
 $session->{data} = $simple;
 
-&$s($session);
+&$serial($session);
 
 $session->{data} = undef;
 
-&$u($session);
+&$unserial($session);
 
-if ($session->{data}->{foo} == 1 &&
-    $session->{data}->{bar} == 2 &&
-    $session->{data}->{baz} eq 'quux' &&
-    $session->{data}->{quux}->[0] eq 'foo' &&
-    $session->{data}->{quux}->[1] eq 'bar') {
-    
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+cmp_deeply($simple, $session->{data}, 'session data is correct');
+
+chdir( $origdir );

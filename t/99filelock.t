@@ -1,55 +1,54 @@
+use Test::More;
+use Test::Deep;
+use Test::Exception;
+use File::Temp qw[tempdir];
+use Cwd qw[getcwd];
+
 eval {require Fcntl;};
 if ($@) {
     print "1..0\n";
     exit;
 }
 
-use Apache::Session::Lock::File;
+plan skip_all => "Optional module (Fcntl) not installed"
+  unless eval {
+               require Fcntl;
+              };
 
-print "1..3\n";
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
-my $dir = int(rand(1000));
-mkdir $dir, 0700;
-chdir $dir;
+plan tests => 4;
 
-my $l = new Apache::Session::Lock::File;
-my $s = {data => {_session_id => 'foo'}, args => {LockDirectory => '.'}};
+my $package = 'Apache::Session::Lock::File';
+use_ok $package;
 
-$l->acquire_read_lock($s);
+my $lock    = $package->new;
+my $session = {
+    data => { _session_id   => 'foo' },
+    args => { LockDirectory => '.'   },
+};
 
-if (-e './Apache-Session-foo.lock') {
-    print "ok 1\n";
-}
-else {
-    print "not ok 1\n";
-}
+$lock->acquire_read_lock($session);
 
-undef $l;
+ok -e './Apache-Session-foo.lock', 'lock file exists';
+
+undef $lock;
 
 unlink('./Apache-Session-foo.lock');
 
-$l = new Apache::Session::Lock::File;
+$lock = $package->new;
 
-$l->acquire_write_lock($s);
+$lock->acquire_write_lock($session);
 
-if (-e './Apache-Session-foo.lock') {
-    print "ok 2\n";
-}
-else {
-    print "not ok 2\n";
-}
+ok -e './Apache-Session-foo.lock', 'lock file exists';
 
-$l->release_all_locks($s);
+$lock->release_all_locks($session);
 
 
-$l->clean('.', 0);
+$lock->clean('.', 0);
 
-if (!-e './Apache-Session-foo.lock') {
-    print "ok 3\n";
-}
-else {
-    print "not ok 3\n";
-}
+ok !-e './Apache-Session-foo.lock', 'lock file does not exist';
 
-chdir '..';
-rmdir $dir;
+chdir( $origdir );
