@@ -2,7 +2,7 @@
 #
 # Apache::Session::Generate::MD5;
 # Generates session identifier tokens using MD5
-# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -11,9 +11,9 @@ package Apache::Session::Generate::MD5;
 
 use strict;
 use vars qw($VERSION);
-use MD5;
+use Digest::MD5;
 
-$VERSION = '2.0';
+$VERSION = '2.1';
 
 sub generate {
     my $session = shift;
@@ -24,7 +24,7 @@ sub generate {
     }
     
     $session->{data}->{_session_id} = 
-        substr(MD5->hexhash(MD5->hexhash(time(). {}. rand(). $$)), 0, $length);
+        substr(Digest::MD5::md5_hex(Digest::MD5::md5_hex(time(). {}. rand(). $$)), 0, $length);
     
 
 }

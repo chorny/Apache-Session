@@ -8,6 +8,8 @@ Session/DB_File.pm
 Session/File.pm
 Session/Flex.pm
 Session/Generate/MD5.pm
+Session/Generate/ModUniqueId.pm
+Session/Generate/ModUsertrack.pm
 Session/Lock/File.pm
 Session/Lock/MySQL.pm
 Session/Lock/Null.pm
@@ -54,3 +56,4 @@ t/99postgres.t
 t/99semaphore.t
 t/99storable.t
 t/99uue.t
+t/99moduniqgen.t

@@ -1,3 +1,16 @@
+Changes in 1.54:
+
+Added mod_uniqueid and mod_usertrack generators from 
+Tatsuhiko Miyagawa <miyagawa@bulknews.net>
+
+Fixed validate function in Flex.
+
+Move to Digest::MD5 instead of MD5.
+
+Changes in 1.53:
+
+?
+
 Changes in 1.52:
 
 Chris Winters <cwinters@intes.net> added the Sybase backing store and 

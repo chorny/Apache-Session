@@ -1,5 +1,5 @@
 eval {require DBI; require DBD::mysql;};
-if ($@) {
+if ($@ || !$ENV{'APACHE_SESSION_MAINTAINER'}) {
     print "1..0\n";
     exit;
 }

@@ -1,4 +1,4 @@
-eval {require MD5;};
+eval {require Digest::MD5;};
 if ($@) {
     print "1..0\n";
     exit;

@@ -2,7 +2,7 @@
 #
 # Apache::Session
 # Apache persistent user sessions
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 1998, 1999, 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 #############################################################################
@@ -207,6 +207,9 @@ is a rather religious topic among Apache users.  This example uses cookies.
 The implementation of a path info system is left as an exercise for the
 reader.
 
+Note that Apache::Session::Generate::ModUsertrack uses Apache's mod_usertrack
+cookies to generate and maintain session IDs.
+
  use Apache::Session::MySQL;
  use Apache;
 
@@ -251,6 +254,9 @@ Lincoln Stein, has a chapter on keeping state.
 Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
 
+Tatsuhiko Miyagawa <miyagawa@bulknews.net> is the author of 
+Generate::ModUniqueID and Generate::ModUsertrack
+
 Erik Rantapaa <rantapaa@fanbuzz.com> found errors in both Lock::File
 and Store::File
 
@@ -291,7 +297,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.53';
+$VERSION = '1.54';
 
 #State constants
 #

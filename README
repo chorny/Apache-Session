@@ -1,28 +1,27 @@
 ---------------------------------------------------------------------------
 
-    23 July 2000                         Jeffrey Baker <jwbaker@acm.org>
+    11 October 2001                  Jeffrey W. Baker <jwbaker@acm.org>    
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.52.
+This is Apache::Session 1.54.
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
 abstracted to make all backing stores behave alike.  The programmer simply
 interacts with a tied hash.
 
-Apache::Session is Copyright(c) 1998, 1999, 2000 Jeffrey William Baker
+Apache::Session is Copyright(c) 1998, 1999, 2000, 2001 Jeffrey William Baker
 <jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
 
 PREREQUISITES
 -------------
 
-To use this distribution of Apache::Session, you need the Storable and 
-MD5 modules from CPAN.  If you intend to extend this module for your own
-purposes, you may not need these prerequisites.
+No particular modules are required, but most of Apache::Session's functions
+require Digest::MD5 and Storable.
 
 If you wish to use the DBI backing stores, you need the latest version of DBI
 and the driver for your database.  Currently MySQL, Postgres, and Oracle are
@@ -31,8 +30,8 @@ supported.
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-1.52.tar.gz
-cd Apache-Session-1.52
+tar -xvzf Apache-Session-1.54.tar.gz
+cd Apache-Session-1.54
 perl Makefile.PL
 make
 make test
@@ -47,8 +46,18 @@ See eg/example.perl.  This program is intended to be run under mod_perl.
 
 AUTHORS
 -------
-Jeffrey William Baker <jwbaker@acm.org> is the author of 
+
+Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
+
+Tatsuhiko Miyagawa <miyagawa@bulknews.net> is the author of 
+Generate::ModUniqueID and Generate::ModUsertrack
+
+Erik Rantapaa <rantapaa@fanbuzz.com> found errors in both Lock::File
+and Store::File
+
+Bart Schaefer <schaefer@zanshin.com> notified me of a bug in 
+Lock::File.
 
 Chris Winters <cwinters@intes.net> contributed the Sybase code.
 
@@ -59,7 +68,7 @@ advice and also Apache::Session::Tree and Apache::Session::Counted.
 
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
 and provided the initial code for it.  He also uses Apache::Session in
-his Embperl module and is the author of Apache::Session::Embperl.
+his Embperl module and is the author of Apache::Session::Embperl
 
 Jochen Wiedmann <joe@ipsoft.de> contributed patches for bugs and
 improved performance.

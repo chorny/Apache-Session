@@ -2,7 +2,7 @@
 #
 # Apache::Session::Flex
 # Apache persistent user sessions stored however you want
-# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -12,7 +12,7 @@ package Apache::Session::Flex;
 use strict;
 use vars qw(@ISA $VERSION $incl);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 @ISA = qw(Apache::Session);
 
 $incl = {};
@@ -39,18 +39,20 @@ sub populate {
     
     if (!exists $incl->{$gen}) {
         eval "require $gen" || die $@;
-        eval '$incl->{$gen} = \&' . $gen . '::generate' || die $@;
+        eval '$incl->{$gen}->[0] = \&' . $gen . '::generate' || die $@;
+        eval '$incl->{$gen}->[1] = \&' . $gen . '::validate' || die $@;
     }
     
     if (!exists $incl->{$ser}) {
         eval "require $ser" || die $@;
-        eval '$incl->{$ser}->[0] = \&' . $ser . '::serialize' || die $@;
+        eval '$incl->{$ser}->[0] = \&' . $ser . '::serialize'   || die $@;
         eval '$incl->{$ser}->[1] = \&' . $ser . '::unserialize' || die $@;
     }
     
     $self->{object_store} = new $store $self;
-    $self->{lock_manager} = new $lock $self;
-    $self->{generate}     = $incl->{$gen};
+    $self->{lock_manager} = new $lock  $self;
+    $self->{generate}     = $incl->{$gen}->[0];
+    $self->{validate}     = $incl->{$gen}->[1];
     $self->{serialize}    = $incl->{$ser}->[0];
     $self->{unserialize}  = $incl->{$ser}->[1];
 
