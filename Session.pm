@@ -9,7 +9,7 @@
 
 package Apache::Session;
 
-$Apache::Session::VERSION = '0.17';
+$Apache::Session::VERSION = '0.17.1';
 
 require Apache if exists $ENV{'MOD_PERL'};
 use MD5;
@@ -111,6 +111,14 @@ sub insert {
 sub options {
   my $runtime = shift || {};
   my $default = shift || {};
+
+  my $key;
+  my $temphash = {};
+  foreach $key ( keys %$runtime ) {
+    $temphash->{ lc $key } = $runtime->{ $key };
+  }
+  
+  $runtime = $temphash;
 
   my $class_default = { lifetime => LIFETIME, autocommit => 1 };
   my $it = { %$class_default, %$default, %$runtime };
