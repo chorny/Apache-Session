@@ -7,48 +7,48 @@
 #
 ############################################################################
 
-package Apache::Session::Win32;
+package Apache::Session::IPC;
 
-$Apache::Session::Win32::VERSION = '0.01';
+$Apache::Session::IPC::VERSION = '0.01';
 
-use strict;
+use IPC::Shareable;
 use vars qw(@ISA);
-
 @ISA=qw(Apache::Session);
 
-BEGIN{ $Apache::Session::Win32::sessions = {} };
+use strict;
+use vars qw/%SESSIONS/;
 
-###########################################################
-# sub create
-#
-# The subclass's create routine is called by the base class's
-# insert routine, after an object has been blessed into your
-# subclass.  Create() needs to check to make sure that it
-# can create a session with the requested ID, and then create 
-# the session in the physical storage.  Return undef
-# on failure, $self on success.  Create should be smart enough
-# to not overwrite existing session that haven't yet expired.
-#
-###########################################################
+# bind session structure to shared memory
+bind_sessions() unless defined(%SESSIONS) && tied(%SESSIONS);
+sub bind_sessions {
+    die "Couldn't bind shared memory"
+        unless tie(%SESSIONS,'IPC::Shareable','THIS',
+                   {create=>1,mode=>0666});
+}
+
+use strict;
 
 sub create {
   my $self = shift;
   my $class = ref( $self ) || $self;
   my $id = shift;
   
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} > time() ) ) {
-    warn "Tried to clobber unexpired session $id in $class->create()" if ($ENV{'SESSION_DEBUG'} eq "On");
+  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} > time() ) ) {
+    warn "Tried to clobber unexpired session $id in $class->create()";
     return undef;
   }
   
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Session $id is expired, reissuing id number" if ($ENV{'SESSION_DEBUG'} eq "On");
-    my $expired_session = bless $Apache::Session::Win32::sessions->{$id}, $class;
+  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} < time() ) ) {
+    warn "Session $id is expired, reissuing id number";
+    my $expired_session = bless $Apache::Session::IPC::sessions->{$id}, $class;
     $expired_session->destroy();
   }
   
-  $Apache::Session::Win32::sessions->{$id} = $self;
+  warn "Inserting new session $id, $self";
   
+  $SESSIONS{$id} = $self;
+  
+  warn "After insert, it is $SESSIONS{$id}";
   return $self;
 }
 
@@ -70,7 +70,7 @@ sub open {
   
   my $session = $class->fetch($id);
   return undef unless $session;
-
+  warn "didn't return undef";
   my $self = $class->SUPER::open($session, $opts );
   return $self;
 }
@@ -86,8 +86,10 @@ sub open {
 sub fetch {
   my $class = shift;
   my $id = shift;
-  
-  return $Apache::Session::Win32::sessions->{$id};
+  warn "Fetching $id";
+  my $rv = $SESSIONS{$id};
+  warn "Returning $rv";
+  return $rv;
 }
 
 ###########################################################
@@ -120,13 +122,13 @@ sub expire {
   my $class = ref( $self ) || $self;
   
   my $id = $self->{'_ID'};
-  
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Tried to open session $id, which is expired." if ($ENV{'SESSION_DEBUG'} eq "On");
+  warn "made it to self->expire, $id";
+  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} < time() ) ) {
+    warn "Tried to open session $id, which is expired.";
     $self->destroy();
     return undef;
   }
-
+  warn "ABout to call superclass, ";
   $self->SUPER::expire();
 }
 
@@ -162,7 +164,7 @@ sub Options {
 
 sub destroy {
   my $self = shift;
-  delete $Apache::Session::Win32::sessions->{ $self->{'_ID'} };
+  delete $SESSIONS{ $self->{'_ID'} };
 }
 
 ###########################################################
@@ -187,12 +189,12 @@ sub dump_to_html {
   
 
 Apache::Status->menu_item(
-    'W32Session' => 'Win32 Session Objects',
+    'IPCSession' => 'IPC::Shareable Session Objects',
     sub {
         my($r, $q) = @_;
         my(@s) = "<TABLE border=1><TR><TD>Session ID</TD><TD>Expires</TD></TR>";
-        foreach my $session (keys %$Apache::Session::Win32::sessions) {
-          my $expires = localtime($Apache::Session::Win32::sessions->{$session}->{'_EXPIRES'});
+        foreach my $session (keys %SESSIONS) {
+          my $expires = localtime($SESSIONS{$session}->{'_EXPIRES'});
           push @s, '<TR><TD>', $session, '</TD><TD>', $expires, "</TD></TR>\n";
         }
         push @s, '</TABLE>';

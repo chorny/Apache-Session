@@ -1,6 +1,15 @@
+############################################################################
+#
+# Apache::Session
+# Apache persistent user sessions
+# Copyright(c) 1998 Jeffrey William Baker (jeff@godzilla.tamu.edu)
+# Distribute under the Artistic License
+#
+############################################################################
+
 package Apache::Session;
 
-$Apache::Session::VERSION = '0.12';
+$Apache::Session::VERSION = '0.13';
 
 use strict;
 use vars qw(@ISA);
@@ -12,7 +21,7 @@ require Tie::Hash;
 
 use constant SECRET     => $ENV{'SESSION_SECRET'}  || 'not very secret'; # bit of uncertainty
 use constant LIFETIME   => $ENV{'SESSION_LIFETIME'} || 60*60;            # expire sessions after n seconds (default: 1 hour)
-use constant ID_LENGTH  => $ENV{'SESSION_ID_LENGTH'} || 16;               # size of the session_id
+use constant ID_LENGTH  => $ENV{'SESSION_ID_LENGTH'} || 16;              # size of the session_id
 use constant MAX_TRIES  => $ENV{'SESSION_MAX_ATTEMPTS'} || 5;            # number of times to try to get a unique id
 
 sub new { 
@@ -30,16 +39,20 @@ sub new {
   my $control = tie( %t, 'Apache::TiedSession', {}, $self) || confess "couldn't create tied hash to $class";
  
   $self->insert($opt);
-	$self->touch();
-	
+  $self->touch();
+  
   return $self;  
 }
 
 
 sub insert {  
   my $self = shift;
-	my $opt = shift;
+  my $opt = shift;
   my $id = $self->hash( $self. rand(). SECRET );
+
+  $self->{'_ID'} = $id;
+  $self->{'_LIFETIME'} = $opt->{'lifetime'};
+  $self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
 
   my $tries;
   while(1) {
@@ -48,9 +61,6 @@ sub insert {
     $id = $self->hash($id);
   }
 
-  $self->{'_ID'} = $id;
-	$self->{'_LIFETIME'} = $opt->{'lifetime'};
-	$self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
 }
 
 sub delete {  # delete a session-variable, or a whole session;
@@ -66,41 +76,38 @@ sub delete {  # delete a session-variable, or a whole session;
 
 sub touch {
   my $self = shift;
-	my $control = shift;
+  my $control = shift;
   
-	$self->{'_ACCESSED'} = time();
+  $self->{'_ACCESSED'} = time();
   $self->{'_EXPIRES'} = time() + $self->{'_LIFETIME'};
   
-	return $self->{'_EXPIRES'};
+  return $self->{'_EXPIRES'};
 }
 
-sub commit {
-  my $self = shift;
-  my $class = ref( $self ) || croak "can't commit without an object reference";
-
-  warn( "$class doesn't define a commit() method" ) if $class ne 'Apache::Session';
+sub store {
+  1;
 }
 
 sub hash {
   my $self = shift;
   my $value = shift;
-	
+  
   return substr(MD5->hexhash($value),0,ID_LENGTH);
 }
 
 sub open {  
-	my $class = shift;
+  my $class = shift;
   my $session = shift;
   my $opt = shift;
 
-	$opt = $class->Options($opt);
+  $opt = $class->Options($opt);
 
-	my $self = $session;
+  my $self = $session;
 
-	$self->{'_LIFETIME'} = $opt->{'lifetime'};
-	$self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
+  $self->{'_LIFETIME'} = $opt->{'lifetime'};
+  $self->{'_AUTOCOMMIT'} = $opt->{'autocommit'};
 
-	$self = $self->expire();
+  $self = $self->expire();
   if (defined $self) { $self->touch(); }
 
   return $self; 
@@ -108,13 +115,14 @@ sub open {
 
 sub Options {
   my $class = shift;
-	my $runtime = shift;
-	my $default = shift;
+  my $runtime = shift;
+  my $default = shift;
 
-  $default ||= { 'autocommit' => 1, 'lifetime' => LIFETIME };  
+  my $class_default = { lifetime => LIFETIME, autocommit => 1 };
+  $default ||= {}; 
   $runtime ||= {};
 
-  my $it = { %$default, %$runtime };
+  my $it = { %$class_default, %$default, %$runtime };
 
   carp( "$class: no 'autocommit' element in option list.  I hope you're commit()ing following code" ) unless exists $it->{'autocommit'};
   
@@ -124,27 +132,30 @@ sub Options {
 sub expire {
   my $self = shift;
   my $class = ref( $self ) || $self;
-	
   if( $class ne $self ) {    #ensure the object hasn't been deleted.
 
     if( $class->fetch( $self->{'_ID'} ) ) {
       return $self;
     }
+    $self->destroy();
     return undef;
   }
   return 1;
 }
 
 sub id {
-	my $self = shift
-	return $self->{'_ID'};
+  my $self = shift;
+  return $self->{'_ID'};
 }
 
 sub commit {
-	my $self = shift;
-	$self->store();
+  my $self = shift;
+  $self->store();
 }
 
+sub unlock {
+  1;
+}
 # -------------- end of package Apache::Session ---------------
 
 package Apache::TiedSession;
@@ -158,16 +169,16 @@ package Apache::TiedSession;
 use Carp;
 
 sub TIEHASH {
-	my $class = shift;
-	my $data = shift;
-	my $self = shift;
-	
-	
-	my $this = {
-		'REF_TO_SELF'=> $self,
-		'DATA'       => $data
-	};
-	
+  my $class = shift;
+  my $data = shift;
+  my $self = shift;
+  
+  
+  my $this = {
+    'REF_TO_SELF'=> $self,
+    'DATA'       => $data
+  };
+  
   return bless $this, $class;
 }
 
@@ -180,16 +191,16 @@ sub FIRSTKEY {            # start key-looping
 
 sub NEXTKEY {            # continue key-looping (through each of 2 hashes)
   my $self = shift;
-	my $last = shift;
+  my $last = shift;
 
-	return each %{ $self->{'DATA'} };
+  return each %{ $self->{'DATA'} };
 }
 
 sub EXISTS {
   my $self = shift;
-	my $key =shift;
+  my $key =shift;
 
-	return exists $self->{'DATA'}->{$key};
+  return exists $self->{'DATA'}->{$key};
 }
 
 sub CLEAR {
@@ -198,34 +209,34 @@ sub CLEAR {
 
 sub STORE {
   my $self = shift;
-	my $key = shift;
-	my $val = shift;
-	
+  my $key = shift;
+  my $val = shift;
+  
   my $rv;
   
   $rv = $self->{'DATA'}->{$key} = $val;
   
-	$self->{'REF_TO_SELF'}->store() if $self->{'DATA'}->{'_AUTOCOMMIT'};
-	
+  $self->{'REF_TO_SELF'}->store() if $self->{'DATA'}->{'_AUTOCOMMIT'};
+  
   return $rv;
 }
 
 sub FETCH {
   my $self = shift;
-	my $key = shift;
-	
-	my $rv;
+  my $key = shift;
   
-	$rv = $self->{'DATA'}->{$key};
+  my $rv;
   
-	return $rv;
+  $rv = $self->{'DATA'}->{$key};
+  
+  return $rv;
 }
 
 sub DELETE {
-  warn "untested: DELETE(@_)";
-	
+#  warn "untested: DELETE(@_)";
+  
   my $self = shift;
-	my $key = shift;
+  my $key = shift;
 
   my $rv;
 
@@ -248,11 +259,12 @@ __END__
 
 =head1 SYNOPSIS
 
+
   use Apache::Session::Win32; # use a global hash on Win32 systems
-	use Apache::Session::DBI; # use a database for real storage
-	use Apache::Session::File; # or maybe an NFS filesystem
-	use Apache::Session::ESP; # or use your own subclass
-	
+  use Apache::Session::DBI; # use a database for real storage
+  use Apache::Session::File; # or maybe an NFS filesystem
+  use Apache::Session::ESP; # or use your own subclass
+  
   # Create a new unique session.
   $session = Apache::Session::Win32->new($opts);
 
@@ -269,6 +281,7 @@ __END__
   $session->{bar} = { complex => [ qw(list of settings) ] };
   
   $session->store();  # write to storage
+  $session->unlock(); # always do this!
 
 
 =head1 DESCRIPTION
@@ -278,13 +291,19 @@ persistent user data in a global hash, which in independent of its real
 storage mechanism.  Apache::Session provides an abstract baseclass from
 which storage classes can be derived.  Existing classes include:
 
-Apache::Session::Win32
-Apache::Session::File
-Apache::Session::DBI
+=item Apache::Session::Win32
+
+=item Apache::Session::File
+
+=item Apache::Session::DBI     /=These two are half-
+
+=item Apache::Session::IPC     \=done, but broken.  Hrmm
+
  
-This package should be considered alpha, as the interface may change, and as
-it may not yet be fully functional.  The documentation and/or source code
-may be erroneous.  Use it at your own risk.
+This package should be considered alpha, as the interface may 
+change, and as it may not yet be fully functional.  The docu-
+mentation and/or source codemay be erroneous.  Use it at your
+own risk.
 
 =head1 ENVIRONMENT
 
@@ -316,7 +335,7 @@ the type of real storage you will be using.
   
   $session = Apache::Session->new();  
   $session = Apache::Session->new( $opts );  
-	$session = Apache::Session->new( { autocommit => 1 } );
+  $session = Apache::Session->new( { autocommit => 1 } );
 
 Note that you must consult $session->{id} to learn the session ID for
 persisting it with the client.  The new ID number is generated afresh,
@@ -349,6 +368,29 @@ Lifetime changes the current lifetime of the object.
  $session->destroy();
 
 Deletes the session from physical storage.  
+
+=head2 Committing changes
+
+  If you defined autocommit as false, you must do $session->store();
+  at the end of your script, or you will lose your changes.
+
+=head2 Locking
+
+  Some storage methods, such as DBI, IPC, and File, require a
+  locking mechanism of some kind.  Sessions are locked throughout
+  the duration of your script.  The lock is obtained when the
+  session object is created (via new() or open()), and it cannot
+  be released automatically.
+  
+  *** ALWAYS CALL UNLOCK() AT THE END OF YOUR PROGRAM ***
+  
+  I wish there was a better way to do this, but there isn't(?)  A
+  script using Apache::Session should always end this way, just to
+  be safe:
+  
+  $session->store();
+  $session->unlock();
+  
 
 =head2 Data Methods
 
@@ -383,7 +425,7 @@ my $id = $session->{'_ID'};
 
 But please don't do this:
 
-$session->{'_ID'} = "Foo"; # same as my $id = $session->id();
+$session->{'_ID'} = "Foo";
 
 =head2 Other Methods
 
@@ -394,6 +436,30 @@ $session->{'_ID'} = "Foo"; # same as my $id = $session->id();
 Dumps your session hash to an HTML table.
 
 =back
+
+=head1 STORAGE CLASSES
+
+=head2 Apache::Session::Win32
+
+Uses a global hash to store sessions.  Win32 does not listen
+to any special evironment variables.
+
+=head2 Apache::Session::File
+
+Stores each session in its own flat file.  Files will be stored
+under the directory in $ENV{'SESSION_FILE_DIR'}.  Without this
+environment variable, the package will die on startup.
+
+Apache::Session::File uses a custom locking mechanism that should
+work regardless of whether the filesystem is local or networked.
+However, locks are not (currently) released when the session object
+is destroyed.  If your program dies before it calls unlock(), the
+session will be lost.  Comments and ideas on this problem are 
+welcome.
+
+=head2 Apache::Session::DBI and Apache::Session::IPC
+
+These are not fully implemented.  IPC is starting to annoy me.
 
 =head1 SUBCLASSING
 
@@ -495,14 +561,10 @@ Places a lock - in the physical storage - on the given session, ensuring
 that no other client to that physical storage may utilize the same session. 
 Returns immediately if the lock can not be acheived.
 
-This method is experimental and intended to prompt discussion and not implemented.
-
 =item $session->unlock()
 
 Removes the lock - in the physical storage - on the given session, allowing
 other clients to utilize that session.
-
-This method is experimental and intended to prompt discussion and not implemented.
 
 =back
 
