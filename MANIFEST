@@ -3,6 +3,7 @@ MANIFEST
 Makefile.PL
 README
 Session.pm
+Session/DaemonLocker.pm
 Session/DBI.pm
 Session/DBIStore.pm
 Session/File.pm

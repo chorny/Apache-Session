@@ -42,6 +42,9 @@ sub materialize {
     my $self    = shift;
     my $session = shift;
 
+    die "Object does not exist in the data store" 
+        unless exists $Apache::Session::MemoryStore::store->{$session->{data}->{_session_id}};
+
     $session->{data} = $Apache::Session::MemoryStore::store->{$session->{data}->{_session_id}};
 }
 

@@ -21,21 +21,13 @@ use Apache::Session::MemoryStore;
 sub get_object_store {
     my $self = shift;
 
-    if(!defined $self->{_object_store}) {
-        $self->{_object_store} = new Apache::Session::MemoryStore;
-    }
-    
-    return $self->{_object_store}
+    return new Apache::Session::MemoryStore;
 }
 
 sub get_lock_manager {
     my $self = shift;
-    
-    if(!defined $self->{_lock_manager}) {
-        $self->{_lock_manager} = new Apache::Session::NullLocker;
-    }
-    
-    return $self->{_lock_manager}
+
+    return new Apache::Session::NullLocker;
 }
 
 1;

@@ -13,25 +13,27 @@ use strict;
 use DBI;
 use Storable qw(freeze thaw);
 
-$Apache::Session::DBIStore::dbh = DBI->connect('dbi:mysql:sessions','root','',
-    { RaiseError => 1, AutoCommit => 1 }) || die $DBI::errstr;
+BEGIN {
 
-$Apache::Session::DBIStore::insert_sth = 
-    $Apache::Session::DBIStore::dbh->prepare_cached(qq{
-        INSERT INTO sessions VALUES (?,?,?)});
+    $Apache::Session::DBIStore::dbh = DBI->connect('dbi:mysql:sessions','root','',
+        { RaiseError => 1, AutoCommit => 1 }) || die $DBI::errstr;
 
-$Apache::Session::DBIStore::update_sth = 
-    $Apache::Session::DBIStore::dbh->prepare_cached(qq{
-        UPDATE sessions SET length = ?, a_session = ? WHERE id = ?});
+    $Apache::Session::DBIStore::insert_sth = 
+        $Apache::Session::DBIStore::dbh->prepare_cached(qq{
+            INSERT INTO sessions VALUES (?,?,?)});
 
-$Apache::Session::DBIStore::remove_sth = 
-    $Apache::Session::DBIStore::dbh->prepare_cached(qq{
-        DELETE FROM sessions WHERE id = ?});
+    $Apache::Session::DBIStore::update_sth = 
+        $Apache::Session::DBIStore::dbh->prepare_cached(qq{
+            UPDATE sessions SET length = ?, a_session = ? WHERE id = ?});
 
-$Apache::Session::DBIStore::materialize_sth = 
-    $Apache::Session::DBIStore::dbh->prepare_cached(qq{
-        SELECT a_session FROM sessions WHERE id = ?});
+    $Apache::Session::DBIStore::remove_sth = 
+        $Apache::Session::DBIStore::dbh->prepare_cached(qq{
+            DELETE FROM sessions WHERE id = ?});
 
+    $Apache::Session::DBIStore::materialize_sth = 
+        $Apache::Session::DBIStore::dbh->prepare_cached(qq{
+            SELECT a_session FROM sessions WHERE id = ?});
+}
 
 sub new {
     my $class = shift;

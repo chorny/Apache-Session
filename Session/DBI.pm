@@ -21,21 +21,13 @@ use Apache::Session::DBIStore;
 sub get_object_store {
     my $self = shift;
 
-    if(!defined $self->{_object_store}) {
-        $self->{_object_store} = new Apache::Session::DBIStore;
-    }
-    
-    return $self->{_object_store}
+    return new Apache::Session::DBIStore;
 }
 
 sub get_lock_manager {
     my $self = shift;
     
-    if(!defined $self->{_lock_manager}) {
-        $self->{_lock_manager} = new Apache::Session::SysVSemaphoreLocker;
-    }
-    
-    return $self->{_lock_manager}
+    return new Apache::Session::SysVSemaphoreLocker;
 }
 
 1;
