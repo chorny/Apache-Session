@@ -251,6 +251,12 @@ Lincoln Stein, has a chapter on keeping state.
 Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
 
+Erik Rantapaa <rantapaa@fanbuzz.com> found errors in both Lock::File
+and Store::File
+
+Bart Schaefer <schaefer@zanshin.com> notified me of a bug in 
+Lock::File.
+
 Chris Winters <cwinters@intes.net> contributed the Sybase code.
 
 Michael Schout <mschout@gkg.net> fixed a commit policy bug in 1.51.
@@ -285,7 +291,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.52';
+$VERSION = '1.53';
 
 #State constants
 #
@@ -361,10 +367,17 @@ sub TIEHASH {
 
     $self->populate;
 
+
     #If a session ID was passed in, this is an old hash.
     #If not, it is a fresh one.
 
     if (defined $session_id  && $session_id) {
+        
+        #check the session ID for remote exploitation attempts
+        #this will die() on suspicious session IDs.        
+
+        &{$self->{validate}}($self);        
+        
         if (exists $args->{Transaction} && $args->{Transaction}) {
             $self->acquire_write_lock;
         }

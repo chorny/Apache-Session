@@ -28,6 +28,7 @@ sub populate {
     $self->{object_store} = new Apache::Session::Store::Sybase $self;
     $self->{lock_manager} = new Apache::Session::Lock::Null $self;
     $self->{generate}     = \&Apache::Session::Generate::MD5::generate;
+    $self->{validate}     = \&Apache::Session::Generate::MD5::validate;
     $self->{serialize}    = \&Apache::Session::Serialize::Sybase::serialize;
     $self->{unserialize}  = \&Apache::Session::Serialize::Sybase::unserialize;
 

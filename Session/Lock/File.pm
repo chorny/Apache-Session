@@ -15,7 +15,7 @@ use Fcntl qw(:flock);
 use Symbol;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 $Apache::Session::Lock::File::LockDirectory = '/tmp';
 
@@ -106,9 +106,8 @@ sub release_all_locks  {
     my $self    = shift;
     my $session = shift;
 
-    flock($self->{fh}, LOCK_UN);
-
     if ($self->{opened}) {
+        flock($self->{fh}, LOCK_UN);
         close $self->{fh} || die $!;
     }
     

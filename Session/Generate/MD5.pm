@@ -13,7 +13,7 @@ use strict;
 use vars qw($VERSION);
 use MD5;
 
-$VERSION = '1.01';
+$VERSION = '2.0';
 
 sub generate {
     my $session = shift;
@@ -27,6 +27,18 @@ sub generate {
         substr(MD5->hexhash(MD5->hexhash(time(). {}. rand(). $$)), 0, $length);
     
 
+}
+
+sub validate {
+    #This routine checks to ensure that the session ID is in the form
+    #we expect.  This must be called before we start diddling around
+    #in the database or the disk.
+
+    my $session = shift;
+    
+    if ($session->{data}->{_session_id} !~ /^[a-fA-F0-9]+$/) {
+        die;
+    }
 }
 
 1;
@@ -52,6 +64,11 @@ number is highly entropic on Linux and other platforms that have good
 random number generators.  You are encouraged to investigate the quality of
 your system's random number generator if you are using the generated ID
 numbers in a secure environment.
+
+This module can also examine session IDs to ensure that they are, indeed,
+session ID numbers and not evil attacks.  The reader is encouraged to 
+consider the effect of bogus session ID numbers in a system which uses
+these ID numbers to access disks and databases.
 
 This modules takes one argument in the usual Apache::Session style.  The
 argument is IDLength, and the value, between 0 and 32, tells this module

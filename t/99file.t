@@ -10,7 +10,7 @@ my $mydir = int(rand(1000));
 mkdir "./$mydir", 0777;
 chdir $mydir;
 
-print "1..5\n";
+print "1..6\n";
 
 my $s = {};
 
@@ -69,7 +69,21 @@ else {
 }
 
 tied(%$s)->delete;
+untie %$s;
 
+eval {
+    tie %$s, 'Apache::Session::File', '../../../../../../../../foo', {
+        Directory     => '.',
+        LockDirectory => '.'
+    };
+};
+if ($@) {
+    print "ok 6\n";
+}
+else {
+    print "not ok 6\n";
+    untie %$s
+}
 
 unlink "./Apache-Session-$id.lock" || die $!;
 chdir "..";

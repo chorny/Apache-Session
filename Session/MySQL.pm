@@ -12,7 +12,7 @@ package Apache::Session::MySQL;
 use strict;
 use vars qw(@ISA $VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 @ISA = qw(Apache::Session);
 
 use Apache::Session;
@@ -27,6 +27,7 @@ sub populate {
     $self->{object_store} = new Apache::Session::Store::MySQL $self;
     $self->{lock_manager} = new Apache::Session::Lock::MySQL $self;
     $self->{generate}     = \&Apache::Session::Generate::MD5::generate;
+    $self->{validate}     = \&Apache::Session::Generate::MD5::validate;
     $self->{serialize}    = \&Apache::Session::Serialize::Storable::serialize;
     $self->{unserialize}  = \&Apache::Session::Serialize::Storable::unserialize;
 
