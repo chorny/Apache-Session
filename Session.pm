@@ -282,7 +282,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.99.6';
+$VERSION = '0.99.7';
 
 use MD5; #yes, you need MD5.pm
 

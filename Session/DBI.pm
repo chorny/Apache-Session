@@ -7,6 +7,25 @@
 #
 ############################################################################
 
+=head1 NAME
+
+Apache::Session::DBI - Session persistence via DBI
+
+=head1 SCHEMA
+
+To use this module, you will need these columns in a table 
+called 'sessions':
+
+ id char(16)
+ length int(11)
+ a_session text
+
+Where the a_session column needs to be able to handle arbitrarily
+long binary data.
+
+=cut
+
+
 package Apache::Session::DBI;
 
 use strict;
