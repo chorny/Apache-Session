@@ -8,21 +8,44 @@
 ############################################################################
 
 package Apache::Session::File;
+use Apache::Session ();
 
-$Apache::Session::File::VERSION = '0.01';
+@Apache::Session::File::ISA = qw(Apache::Session);
+$Apache::Session::File::VERSION = '0.02';
 
 use Carp;
 use Storable qw(nstore_fd retrieve_fd);
 use strict;
-use vars qw(@ISA);
-
-@ISA=qw(Apache::Session);
 
 use constant DIR   => $ENV{'SESSION_FILE_DIRECTORY'}   || croak "SESSION_FILE_DIRECTORY not set";
-use constant HOLD  => $ENV{'SESSION_FILE_LOCK_TIMEOUT'}|| 3600;
-use constant MAX   => $ENV{'SESSION_FILE_RETRIES'}     || 5;
-use constant DELAY => $ENV{'SESSION_FILE_WAIT'}        || 1;
-use constant WARN  => $ENV{'SESSION_FILE_WARN'}        || undef;
+use constant HOLD  => $ENV{'SESSION_FILE_LOCK_TIMEOUT'}|| 60;
+
+#BEGIN: {
+  # garbage collector
+
+#  warn "enterring garbage collector";
+#  opendir ( DH, DIR ) || warn "Garbage collection failed: $!";
+#  my @files = readdir DH;
+#  my $file;
+#  foreach $file (@files) {
+#    next if $file =~ /\./;
+#    next unless lock(DIR."/".$file);
+#    open (FH, '<'.DIR."/".$file) || warn "Couldn't GC session $file", next;
+#    my $hashref = retrieve_fd(*FH);
+#    if ( $hashref->{'_EXPIRES'} < time() ) {
+#      destroy($hashref);
+#    }
+#    close FH;
+#    unlock(DIR."/".$file);
+#  }
+#  closedir DH;
+#}
+
+sub options {
+  { autocommit => 0,
+    lifetime   => $ENV{'SESSION_LIFETIME'}
+  };
+}
 
 sub lock {
   my $fn = shift;
@@ -49,99 +72,74 @@ sub lock {
   
   my $expires = time() + $lifetime;
   print LOCK "$$\n$ENV{'SERVER_NAME'}\n$expires";
-  
+    
   return close LOCK;
 
-};
-  
-
-sub expire {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
-  
-  if ($self->{'_EXPIRES'} < time()) {
-    $self->destroy();
-    return undef;
-  }
-
-  $self->SUPER::expire();
 }
 
-sub open {  
+sub unlock {
+  my $fh = shift;
+  if (ref($fh)) {
+    $fh = DIR."/".$fh->{'_ID'};
+  }
+
+  return unlink "$fh.lock";
+
+}
+  
+
+sub commit {
   my $class = shift;
-  my $id = shift;  
-  my $opts = shift || {};
-  
-  my $session = $class->fetch($id);
-  if (!$session) {
-    unlock (DIR."/".$id);
-    return undef;
-  }
-
-  $session = bless $session, $class;
-
-  my $self = $class->SUPER::open($session, $opts );
-  
-  return $self;
-}
-
-sub store {
-  my $self = shift;
-  my $id = $self->{'_ID'};
+  my $hashref = shift;
+  my $id = $hashref->{ '_ID' };
   my $fh = DIR."/".$id;
    
   lock($fh) || warn "Couldn't get a lock to store $id", return undef;
   open(ME, ">$fh") || warn "Couldn't store() session $id: $^E", return undef;
-  nstore_fd $self, \*ME;
+  nstore_fd $hashref, \*ME;
   close ME || warn "Close failed in store(): $^E", return undef;
   
   return 1;
 }
 
-sub Options {
-  my( $class, $runtime_opts ) = @_;
-  $class->SUPER::Options( $runtime_opts, { autocommit => 1 , lifetime => $ENV{'SESSION_LIFETIME'}} );
-}  
-
-
 sub fetch {
   my $class = shift;
-  my $id = shift;
-  my $fh = DIR."/".$id;
-
+  my $id    = shift;
+  my $fh    = DIR."/".$id;
 
   lock($fh) || warn "Lock failed on session $id, $^E", return undef;
-  open (ME, "<$fh") || warn "Couldn't open session $id, $^E", return undef;
+  open (ME, "<$fh") || warn "Couldn't open session $id, $^E", unlock($fh), return undef;
     
-  my $sessionref;
+  my $hashref;
     
   eval {
     local $SIG{__DIE__};
-    $sessionref = retrieve_fd(*ME);
+    $hashref = retrieve_fd(*ME);
   };
     
   close ME || warn "Close failed for session $id";
   
-  return $sessionref;
+  return $hashref;
 }
 
 sub create {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
-  my $id = shift;
-  my $fh = DIR."/".$id;
+  my $class = shift;
+  my $id    = shift;
+  my $fh    = DIR."/".$id;  
 
   if (-e "$fh") { #check the expiration on an existing session
-    my $session = $class->fetch($id);
+    my $hashref = $class->fetch($id);
 
-    if (!$session) {
+    if (!$hashref) {
+      unlock($fh);
       return undef; #couldn't open it, maybe another PID has it locked?
     }
     
-    if ($session->{'_EXPIRES'} < time()) {
-      $session->destroy();
+    if ($hashref->{'_EXPIRES'} < time()) {
+      destroy($hashref);
     }
     else {
+      unlock($fh);
       return undef; #this session is still good, try another id
     }
   }
@@ -152,8 +150,9 @@ sub create {
       return undef;
     }
 
-    open (ME, ">$fh") || warn "Didn't open $id for create(), $^E", return undef;
+    open (ME, ">$fh") || warn "Didn't open $id for create(), $^E", unlock($fh), return undef;
 
+    my $self = {};
     nstore_fd ($self, \*ME);
 
     $rv = close ME;
@@ -171,9 +170,17 @@ sub destroy {
   my $id = $self->{'_ID'};
   my $fh = DIR."/".$id;
 
+  unlink $fh;
   unlock($fh); 
-  unlink $fh || warn "Explicit destroy failed for session $id, $^E", return undef;
   return 1;
+}
+
+sub DESTROY {
+  my $self = shift;
+  my $id = $self->{'_ID'};
+  my $fh = DIR."/".$id;
+
+  unlock($fh);
 }
 
 sub dump_to_html {
@@ -189,21 +196,65 @@ sub dump_to_html {
   return $s;
 }
 
-sub unlock {
-  my $fh = shift;
-  if (ref($fh)) {
-    $fh = DIR."/".$fh->{'_ID'};
-  }
-
-  return unlink "$fh.lock";
-
-}
-
-sub DESTROY {
-  my $self = shift;
-  my $id = $self->{'_ID'};
-  my $fh = DIR."/".$id;
-
-}
-
 1;
+
+__END__
+
+=head1 NAME
+
+Apache::Session::File - Store client sessions in your filesystem
+
+=head1 SYNOPSIS
+
+use Apache::Session::File
+
+=head1 DESCRIPTION
+
+This is a File storage subclass for Apache::Session.  Client state is stored
+in flat files.  Try C<perldoc Session> for more info.
+
+=head1 INSTALLATION
+
+=head2 Getting started
+
+You will need to create a directory for Apache to store the session files.
+This directory must be writeable by the httpd process.
+
+=head2 Environment
+
+You will need to configure your environment to get Session::File to work.  You
+should define the variable SESSION_FILE_DIRECTORY with the name of the 
+directory that you prepared above.  The package will croak if you don't 
+define this.
+
+I define this variables in my httpd.conf:
+
+ PerlSetEnv SESSION_FILE_DIRECTORY /tmp/sessions
+
+=head1 USAGE
+
+This package complies with the API defined by Apache::Session.  For details,
+please see that package's documentation.
+
+The default for autocommit in Apache::Session::File is 0, which means that you
+will need to either call $session->store() when you are done or set
+autocommit to 1 via the open() and new() functions.
+
+=head1 NOTES
+
+The session hashes are stored in network order, so you should be able to
+use this package on an NFS filesystem for a whole server farm.
+
+Performance worsens every time a new sessions is created.  The session
+directory should be cleaned out occasionally.  There is a garbage collector
+at the top of this file which you may want to uncomment and play with.
+
+Let me know if it works.
+
+=head1 AUTHORS
+
+Jeffrey Baker <jeff@godzilla.tamu.edu>, author and maintainer.
+
+Redistribute under the Perl Artistic License.
+
+

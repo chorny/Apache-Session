@@ -20,6 +20,9 @@ print<<__EOS__;
 #                        
 # Apache::Session::IPC - IPC::Shareable
 #
+# Apache::Session::DBI - DBI
+#                        FreezeThaw
+#
 ################################################
 
 __EOS__

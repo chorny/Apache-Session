@@ -1,9 +1,15 @@
+######################################################################
+#
+# Consult the documentation before trying to run this file.
+# You need to set the environment variable SESSION_FILE_DIRECTORY
+# This file also assumes PerlSendHeader Off
+#
+######################################################################
+
 use strict;
 use Apache;
 use Apache::Constants;
-use Apache::Session;
 use Apache::Session::File;
-use CGI;
 
 my $r = Apache->request();
 
@@ -23,21 +29,26 @@ die "No session" unless $session;
 
 my $input = CGI::param('input');
 $session->{'name'} = $input if $input;
+
+my $link = $session->rewrite();
+
 print<<__EOS__;
 
 Hello<br>
 Session ID number is: $session->{'_ID'}<br>
-You wrote $input<br>
+The Session ID is embedded in the URL<br>
+<br>
+Your input to the form was: $input<br>
 Your name is $session->{'name'}<br>
 
-<form action="http://localhost/test.perl/$session->{'_ID'}" method="post">
+<form action="$link" method="post">
   Type in your name here:
   <input name="input">
   <input type="submit" value="Go!">
 </form>
 __EOS__
 
-print "<hr>Session contents:\n";
+print "<hr>These are the contents of the session hash:\n";
 print $session->dump_to_html();
 
-$session->unlock();
+$session->store(); # You should store() regardless of autocommit

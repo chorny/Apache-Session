@@ -1,178 +1,177 @@
 ############################################################################
 #
-# Apache::Session::Win32
-# Apache persistent user session via Win32 global memory
+# Apache::Session::IPC
+# Apache persistent user session via SysV IPC shared memory
 # Copyright(c) 1998 Jeffrey William Baker
 # Distribute under the Artistic License
 #
 ############################################################################
 
 package Apache::Session::IPC;
-
+use Apache::Session;
+@Apache::Session::IPC::ISA     = qw(Apache::Session);
 $Apache::Session::IPC::VERSION = '0.01';
 
 use IPC::Shareable;
-use vars qw(@ISA);
-@ISA=qw(Apache::Session);
-
+use MD5;
 use strict;
-use vars qw/%SESSIONS/;
+use vars qw/%sessions %locker/;
 
-# bind session structure to shared memory
-bind_sessions() unless defined(%SESSIONS) && tied(%SESSIONS);
-sub bind_sessions {
-    die "Couldn't bind shared memory"
-        unless tie(%SESSIONS,'IPC::Shareable','THIS',
-                   {create=>1,mode=>0666});
+%sessions = ();
+%locker   = ();
+
+bind_sessions() unless tied(%sessions);
+sub bind_sessions {  
+  die "Couldn't bind shared memory"
+    unless tie( %sessions, 'IPC::Shareable', 'ApSI',
+                {create=>1,mode=>0666}
+              );
+  die "Couldn't bind global lock"
+    unless tie( %locker, 'IPC::Shareable', 'ApSI',
+      	      	{create=>1,mode=>0666}
+	      );
 }
 
-use strict;
+sub glock {
+  while(1) {
+    tied( %locker )->shlock();
+    if ($locker{'lock'} == 1 ) {
+      tied( %locker )->shunlock();
+      select(undef, undef, undef, 0.25);
+      next;
+    }
+    $locker{'lock'} = 1;
+    last;
+  }
+  tied( %locker )->shunlock();
+  return 1;
+}
+
+sub gunlock {
+  tied( %locker )->shlock();
+  delete $locker{'lock'};
+  tied( %locker )->shunlock();
+  return 1;
+}
+
+sub options {
+  { autocommit => 0,
+    lifetime   => $ENV{'SESSION_LIFETIME'},
+  };
+}
 
 sub create {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
-  my $id = shift;
-  
-  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} > time() ) ) {
-    warn "Tried to clobber unexpired session $id in $class->create()";
-    return undef;
-  }
-  
-  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Session $id is expired, reissuing id number";
-    my $expired_session = bless $Apache::Session::IPC::sessions->{$id}, $class;
-    $expired_session->destroy();
-  }
-  
-  warn "Inserting new session $id, $self";
-  
-  $SESSIONS{$id} = $self;
-  
-  warn "After insert, it is $SESSIONS{$id}";
-  return $self;
-}
-
-###########################################################
-# sub open
-#
-# The subclass's open will be called from the client program.
-# Open takes two args, the id number and a hash of options.
-# Open needs to call fetch to retrieve the session from
-# physical storage, call $class->SUPER::open with a
-# blessed reference to the object and the hash of options.
-# Return undef on failure.
-###########################################################
-
-sub open {  
   my $class = shift;
-  my $id = shift;  
-  my $opts = shift || {};
+  my $id    = shift;
   
-  my $session = $class->fetch($id);
-  return undef unless $session;
-  warn "didn't return undef";
-  my $self = $class->SUPER::open($session, $opts );
-  return $self;
+  my $lockhash = $$.$ENV{'SERVER_NAME'};
+#  my $locker = tied( %sessions);
+#  $locker->shlock();
+  
+  tied( %sessions )->shlock();;
+  if ( ++$sessions{ 'gc_counter' } % 100 == 0 ) {
+    my $key;
+    foreach $key ( keys %sessions ) {
+      next unless ( $sessions{ $key } =~ /HASH/ );
+      if ( $sessions{ $key }->{ '_EXPIRES' } < time()
+           && !( defined $sessions{ $key }->{ '_LOCK' } ) ) {
+        delete $sessions{ $key };
+      }
+    }
+  }
+  
+  if ( defined $sessions{ $id } ) {
+    if ( defined $sessions{ $id }->{ '_LOCK' } ) {
+      if ( $sessions{ $id }->{ '_LOCK' } ne $lockhash ) {
+        tied( %sessions )->shunlock();;
+        return undef;
+      }
+    }
+    if ( defined $sessions{ $id }->{ '_EXPIRES' } ) {
+      if ( $sessions{ $id }->{ '_EXPIRES' } < time() ) {
+        delete $sessions{ $id };
+      }
+      else {
+        tied( %sessions )->shunlock();;
+        return undef;
+      }
+    }
+  }
+  
+  $sessions{ $id } = { '_ID'   => $id,
+                       '_LOCK' => $lockhash
+                     };
+  
+  tied( %sessions )->shunlock();;
+  return { '_ID'   => $id,
+           '_LOCK' => $lockhash
+         };
 }
-
-###########################################################
-# sub fetch
-#
-# Fetch is used to retrieve the sesion from physical storage.
-# Fetch is called from the subclass's open().  
-#
-###########################################################
 
 sub fetch {
   my $class = shift;
-  my $id = shift;
-  warn "Fetching $id";
-  my $rv = $SESSIONS{$id};
-  warn "Returning $rv";
-  return $rv;
-}
-
-###########################################################
-# sub store
-#
-# Store is used to commit changes in the session object to
-# physical storage.  Store is called depending on whether
-# autocommit is on or off in the options hash.  If autocommit
-# is true, store() is called every time the session object is
-# modified.  If autocommit is false, store() is only called if
-# the client program calls it explicitly.  If your subclass
-# doesn't need to do anything special to update the physical
-# storage, you don't need to implement store().
-###########################################################
-
-
-###########################################################
-# sub expire
-#
-# Expire needs to make sure that the object being open()ed 
-# hasn't expired yet.  Expired objects should destroy them-
-# selves and return undef.  Good object should call 
-# $self->SUPER::expire()
-#
-###########################################################
-
-
-sub expire {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
+  my $id    = shift;
   
-  my $id = $self->{'_ID'};
-  warn "made it to self->expire, $id";
-  if ( $SESSIONS{$id} && ( $SESSIONS{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Tried to open session $id, which is expired.";
-    $self->destroy();
-    return undef;
+  return undef unless $id;
+  my $lockhash = $$.$ENV{'SERVER_NAME'};
+
+
+  #my $locker = tied( %sessions );
+  #$locker->shlock();
+  
+  tied( %sessions )->shlock();;
+  if ( defined $sessions{ $id } ) {
+    if ( keys % { $sessions{ $id } } == 0 ) {
+      tied( %sessions )->shunlock();;
+      return undef;
+    }
+    if ( defined $sessions{ $id }->{ '_LOCK' } ) {
+      if ( $sessions{ $id }->{ '_LOCK' } ne $lockhash ) {
+        tied( %sessions )->shunlock();;
+        return undef;
+      }
+    }
+    
+    my %copy_of_hash = % { $sessions{ $id } };
+    $copy_of_hash{ '_LOCK' } = $lockhash;
+    $sessions{ $id } = \%copy_of_hash;
+    tied( %sessions )->shunlock();;
+    return \%copy_of_hash;
   }
-  warn "ABout to call superclass, ";
-  $self->SUPER::expire();
+
+  tied( %sessions )->shunlock();;
+  return undef;
 }
 
-###########################################################
-#
-# sub Options
-#
-# Options should merge the user's runtime options with 
-# class defaults, then call Options in the superclass.  Note
-# that anything you hard-code as defaults here will override
-# the user's environment settings from httpd.conf, so be 
-# thoughtful when coding this routine.
-#
-# You should define a default value for autocommit: either 1 or 0,
-# depending on how much overhead you incur in writing to you
-# physical storage.
-#
-###########################################################
-
-sub Options {
-  my( $class, $runtime_opts ) = @_;
-  $class->SUPER::Options( $runtime_opts, { autocommit => 1 });
-}  
-
-###########################################################
-#
-# sub destroy
-#
-# Destroy should remove the object from physical storage,
-# and clean up any locking mechanisms.
-#
-###########################################################
+sub commit {
+  tied( %sessions )->shlock();;
+  my $class = shift;
+  my $hashref = shift;
+  my $id = $hashref->{ '_ID' };
+  
+  $sessions{ $id } = $hashref;
+  tied( %sessions )->shunlock();;
+}
 
 sub destroy {
+  tied( %sessions )->shlock();;
   my $self = shift;
-  delete $SESSIONS{ $self->{'_ID'} };
+  delete $sessions{ $self->{ '_ID' } };
+  tied( %sessions )->shunlock();;
 }
 
-###########################################################
-#
-# These next two are handy, but you don't need to implement
-# them.
-#
-###########################################################
+sub DESTROY {
+  tied( %sessions )->shlock();;
+  my $self = shift;
+  my $id = $self->{ '_ID' };
+  
+  if (defined $sessions{ $id }) {  
+    my %copy_of_hash = % { $sessions{ $id } };
+    delete $copy_of_hash{ '_LOCK' };
+    $sessions{ $id } = \%copy_of_hash;
+  }
+  tied( %sessions )->shunlock();;
+}
 
 sub dump_to_html {
   my $self = shift;
@@ -186,21 +185,77 @@ sub dump_to_html {
   $s = $s."\n</table>\n";
   return $s;
 }
-  
 
 Apache::Status->menu_item(
-    'IPCSession' => 'IPC::Shareable Session Objects',
+    'IPCSession' => 'IPC Session Objects',
     sub {
+        my $counter;
         my($r, $q) = @_;
-        my(@s) = "<TABLE border=1><TR><TD>Session ID</TD><TD>Expires</TD></TR>";
-        foreach my $session (keys %SESSIONS) {
-          my $expires = localtime($SESSIONS{$session}->{'_EXPIRES'});
-          push @s, '<TR><TD>', $session, '</TD><TD>', $expires, "</TD></TR>\n";
+        my(@s) = "<TABLE border=1><TR><TD>Session ID</TD><TD>Expires</TD><TD>Lock</TD></TR>";
+        foreach my $session ( sort keys %sessions) {
+          next unless ( $sessions{ $session } =~ /HASH/ );
+          my $expires = localtime($sessions{$session}->{'_EXPIRES'});
+          push @s, '<TR><TD>', $session, '</TD><TD>', $expires, '</TD><TD>', $sessions{$session}->{ '_LOCK' }, "</TR>\n";
+          $counter++;
         }
         push @s, '</TABLE>';
+        push @s, "According to the garbage collector, there have been $sessions{ 'gc_counter' } sessions.";
+        push @s, "<br>$counter sessions remain in memory.";
         return \@s;
    }
 
 ) if ($INC{'Apache.pm'} && Apache->module('Apache::Status'));
 
 1;
+  
+__END__
+
+=head1 NAME
+
+Apache::Session::IPC - Store client sessions via IPC::Shareable
+
+=head1 SYNOPSIS
+
+use Apache::Session::IPC
+
+=head1 DESCRIPTION
+
+This is an IPC storage subclass for Apache::Session.  Client state is stored
+in a shared memory block.  Try C<perldoc Session> for more info.
+
+=head1 INSTALLATION
+
+=head2 Getting started
+
+Build, test, and install IPC::Shareable, from CPAN.  If you don't have IPC
+on your system, you can't use this module.
+
+Build and install Apache::Session
+
+=head2 Environment
+
+Apache::Session::IPC does not define any environment variables beyond those
+of Apache::Session.  See that package for details.
+
+=head1 USAGE
+
+This package complies with the API defined by Apache::Session.  For details,
+please see that package's documentation.
+
+The default for autocommit in Apache::Session::IPC is 0, which means that you
+will need to either call $session->store() when you are done or set
+autocommit to 1 via the open() and new() functions.
+
+=head1 NOTES
+
+Performance of IPC on my test system (Linux 2.0.34) is boy-howdy slow.  DBI
+is approx. 80 times faster.  Also, IPC::Shareable will eventually fall over 
+under heavy load.  Try to use one of the other subclasses unless your 
+system's IPC is vastly better than what I have seen.
+
+=head1 AUTHORS
+
+Jeffrey Baker <jeff@godzilla.tamu.edu>, author and maintainer.
+
+Redistribute under the Perl Artistic License.
+

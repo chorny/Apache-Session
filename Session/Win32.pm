@@ -8,169 +8,81 @@
 ############################################################################
 
 package Apache::Session::Win32;
-
-$Apache::Session::Win32::VERSION = '0.01';
-
-use strict;
-use vars qw(@ISA);
-
+use Apache::Session ();
 @ISA=qw(Apache::Session);
+
+$Apache::Session::Win32::VERSION = '0.03';
+
+use vars qw($gc_counter $sessions);
 
 BEGIN{ $Apache::Session::Win32::sessions = {} };
 
-###########################################################
-# sub create
-#
-# The subclass's create routine is called by the base class's
-# insert routine, after an object has been blessed into your
-# subclass.  Create() needs to check to make sure that it
-# can create a session with the requested ID, and then create 
-# the session in the physical storage.  Return undef
-# on failure, $self on success.  Create should be smart enough
-# to not overwrite existing session that haven't yet expired.
-#
-###########################################################
+sub options {
+  { autocommit => 1,
+    lifetime   => $ENV{'SESSION_LIFETIME'}
+  };
+}
 
 sub create {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
-  my $id = shift;
-  
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} > time() ) ) {
-    warn "Tried to clobber unexpired session $id in $class->create()" if ($ENV{'SESSION_DEBUG'} eq "On");
-    return undef;
-  }
-  
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Session $id is expired, reissuing id number" if ($ENV{'SESSION_DEBUG'} eq "On");
-    my $expired_session = bless $Apache::Session::Win32::sessions->{$id}, $class;
-    $expired_session->destroy();
-  }
-  
-  $Apache::Session::Win32::sessions->{$id} = $self;
-  
-  return $self;
-}
-
-###########################################################
-# sub open
-#
-# The subclass's open will be called from the client program.
-# Open takes two args, the id number and a hash of options.
-# Open needs to call fetch to retrieve the session from
-# physical storage, call $class->SUPER::open with a
-# blessed reference to the object and the hash of options.
-# Return undef on failure.
-###########################################################
-
-sub open {  
   my $class = shift;
-  my $id = shift;  
-  my $opts = shift || {};
+  my $id    = shift;
   
-  my $session = $class->fetch($id);
-  return undef unless $session;
-
-  my $self = $class->SUPER::open($session, $opts );
-  return $self;
+  if ( defined $Apache::Session::Win32::sessions->{ $id } ) {
+    if ( $Apache::Session::Win32::sessions->{ $id }->{ '_EXPIRES' } < time() ) {
+      delete $Apache::Session::Win32::sessions->{$id};
+    }
+    else {
+      return undef;
+    }
+  }
+  
+  if ( ++$Apache::Session::Win32::gc_counter % 100 == 0 ) {
+    my $key;    
+    foreach $key (keys %$Apache::Session::Win32::sessions) {
+      if ( $Apache::Session::Win32::sessions->{ $key }->{ '_EXPIRES' } <= time() ) {
+        delete $Apache::Session::Win32::sessions->{ $key };
+      }
+    }
+  }
+  
+  $Apache::Session::Win32::sessions->{ $id } = {};
+  return {};
 }
-
-###########################################################
-# sub fetch
-#
-# Fetch is used to retrieve the sesion from physical storage.
-# Fetch is called from the subclass's open().  
-#
-###########################################################
 
 sub fetch {
   my $class = shift;
-  my $id = shift;
+  my $id    = shift;
   
-  return $Apache::Session::Win32::sessions->{$id};
-}
+  return undef unless $Apache::Session::Win32::sessions->{ $id };
 
-###########################################################
-# sub store
-#
-# Store is used to commit changes in the session object to
-# physical storage.  Store is called depending on whether
-# autocommit is on or off in the options hash.  If autocommit
-# is true, store() is called every time the session object is
-# modified.  If autocommit is false, store() is only called if
-# the client program calls it explicitly.  If your subclass
-# doesn't need to do anything special to update the physical
-# storage, you don't need to implement store().
-###########################################################
-
-
-###########################################################
-# sub expire
-#
-# Expire needs to make sure that the object being open()ed 
-# hasn't expired yet.  Expired objects should destroy them-
-# selves and return undef.  Good object should call 
-# $self->SUPER::expire()
-#
-###########################################################
-
-
-sub expire {
-  my $self = shift;
-  my $class = ref( $self ) || $self;
-  
-  my $id = $self->{'_ID'};
-  
-  if ( $Apache::Session::Win32::sessions->{$id} && ( $Apache::Session::Win32::sessions->{$id}->{'_EXPIRES'} < time() ) ) {
-    warn "Tried to open session $id, which is expired." if ($ENV{'SESSION_DEBUG'} eq "On");
-    $self->destroy();
-    return undef;
+  my $rv = {}; 
+  my $key;
+  foreach $key ( keys %{ $Apache::Session::Win32::sessions->{ $id } } ) {
+    $rv->{ $key } = $Apache::Session::Win32::sessions->{ $id }->{ $key };
   }
 
-  $self->SUPER::expire();
+  return $rv;
 }
 
-###########################################################
-#
-# sub Options
-#
-# Options should merge the user's runtime options with 
-# class defaults, then call Options in the superclass.  Note
-# that anything you hard-code as defaults here will override
-# the user's environment settings from httpd.conf, so be 
-# thoughtful when coding this routine.
-#
-# You should define a default value for autocommit: either 1 or 0,
-# depending on how much overhead you incur in writing to you
-# physical storage.
-#
-###########################################################
-
-sub Options {
-  my( $class, $runtime_opts ) = @_;
-  $class->SUPER::Options( $runtime_opts, { autocommit => 1 });
-}  
-
-###########################################################
-#
-# sub destroy
-#
-# Destroy should remove the object from physical storage,
-# and clean up any locking mechanisms.
-#
-###########################################################
+sub commit {
+  my $class = shift;
+  my $hashref = shift;
+  my $id = $hashref->{ '_ID' };
+  
+  my $key;
+  foreach $key (keys %$hashref) {
+    $Apache::Session::Win32::sessions->{ $id }->{ $key } = $hashref->{$key};
+  }
+}
 
 sub destroy {
   my $self = shift;
-  delete $Apache::Session::Win32::sessions->{ $self->{'_ID'} };
+  delete $Apache::Session::Win32::sessions->{$self->{'_ID'}};
 }
-
-###########################################################
-#
-# These next two are handy, but you don't need to implement
-# them.
-#
-###########################################################
+  
+sub DESTROY { 
+  my $self = shift;
+}
 
 sub dump_to_html {
   my $self = shift;
@@ -202,3 +114,44 @@ Apache::Status->menu_item(
 ) if ($INC{'Apache.pm'} && Apache->module('Apache::Status'));
 
 1;
+
+__END__
+
+=head1 NAME
+
+Apache::Session::Win32 - Store client sessions in a global hash
+
+=head1 SYNOPSIS
+
+use Apache::Session::Win32
+
+=head1 DESCRIPTION
+
+This is a Win32 storage subclass for Apache::Session.  Client state is stored
+in a global hash.  Since Win32 Apache is multithreaded instead of multiprocess,
+this actually works and is extremely quick.  
+Try C<perldoc Session> for more info.
+
+=head1 INSTALLATION
+
+Follow the installation instructions from Apache::Session.
+
+=head2 Environment
+
+Apache::Session::Win32 does not define any environment variables beyond those
+defined by Apache::Session.
+
+=head1 USAGE
+
+This package complies with the API defined by Apache::Session.  For details,
+please see that package's documentation.
+
+This package installs an entry on the Apache::Status menu which will let you
+monitor sessions in real-time.
+
+=head1 AUTHORS
+
+Jeffrey Baker <jeff@godzilla.tamu.edu>, author and maintainer.
+
+Redistribute under the Perl Artistic License.
+
