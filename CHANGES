@@ -1,0 +1,20 @@
+If you are upgrading from a previous version of Apache::Session, please note
+these changes:
+
+The Apache::Session::DBI module is gone.  It has been obsoleted by MySQL
+and Postgres.  Please read the documentation for the module that corresponds
+with your database.
+
+The semaphore locker is no longer used anywhere by default.  If you want
+to turn it on, you need to hack the modules themselves, or us
+Apache::Session::Flex.
+
+By default, all IDs are now 32-characters long.  You can truncate them
+to the previous default of 16 characters by providing the IDLength argument
+when tieing your sessions.  Note that you might also need to extend the 
+datatype of the ID column in your database schema.
+
+All of the modules have been refreshed.  I suggest reading the documentation
+for the ones that you plan to use.
+
+Jeffrey

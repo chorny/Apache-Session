@@ -2,7 +2,7 @@
 #
 # Apache::Session
 # Apache persistent user sessions
-# Copyright(c) 1998, 1999 Jeffrey William Baker (jeffrey@kathyandjeffrey.net)
+# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 #############################################################################
@@ -18,7 +18,7 @@ Apache::Session - A persistence framework for session data
   my %session;
   
   #make a fresh session for a first-time visitor
-  tie %session, 'Apache::Session::DBI';
+  tie %session, 'Apache::Session::MySQL';
 
   #stick some stuff in it
   $session{visa_number} = "1234 5678 9876 5432";
@@ -30,7 +30,7 @@ Apache::Session - A persistence framework for session data
   
   #get the session data back out again
   my %session;
-  tie %session, 'Apache::Session::DBI', $id;
+  tie %session, 'Apache::Session::MySQL', $id;
   
   &validate($session{visa_number});
   
@@ -38,37 +38,28 @@ Apache::Session - A persistence framework for session data
   tied(%session)->delete;
   
 
-=head2 NOTE
-
-There was an earlier attempt at creating a session handler, which 
-existed until Apache::Session 0.17.  This version is completely 
-incompatible with that version.  If you are using Embperl, as of this
-writing you need to use Apache::Session 0.17.
-
-=head1 THE GAME
-
-HTTP is a stateless protocol, which makes it difficult to track 
-a user between requests.  Apache::Session bridges this problem.
-
 =head1 DESCRIPTION
 
 Apache::Session is a persistence framework which is particularly useful
 for tracking session data between httpd requests.  Apache::Session is
 designed to work with Apache and mod_perl, but it should work under
-CGI and other web servers.
+CGI and other web servers, and it also works outside of a web server
+altogether.
 
-Apache::Session consists of three components: the interface, the object
-store, and the lock manager.  The interface is defined in Session.pm,
-which is meant to be easily subclassed.  The object store is implemented
-by Session::DBIStore, Session::FileStore, and Session::MemoryStore.  
-Various locking schemes are implemented in Session::PosixFileLocker, 
-Session::SysVSemaphoreLocker, and Session::NullLocker.
+Apache::Session consists of five components: the interface, the object store,
+the lock manager, the ID generator, and the serializer.  The interface is
+defined in Session.pm, which is meant to be easily subclassed.  The object
+store can be the filesystem, a Berkeley DB, a MySQL DB, or a Postgres DB.
+Locking is done by lock files, semaphores, or the locking capabilities of MySQL
+and Postgres.  Serialization is done via Storable, and optionally  ASCII-fied
+via MIME or pack().  ID numbers are generated via MD5.  The reader is
+encouraged to extend these capabilities to meet his own requirements.
 
 A derived class of Apache::Session is used to tie together the three
-components.  The derived class inherits the interface from Apache::Session,
-and specifies which store and locker classes to use.  Apache::Session::DBI,
-for instance, uses the DBIStore class and the SysVSemaphoreLocker class.
-You can easily plug in your own object store or locker class.
+components.  The derived class inherits the interface from Apache::Session, and
+specifies which store and locker classes to use.  Apache::Session::MySQL, for
+instance, uses the MySQL storage class and also the MySQL locking class. You
+can easily plug in your own object store or locker class.
 
 =head1 INTERFACE
 
@@ -82,16 +73,16 @@ of options that will be passed to the object store and locker classes.
 
 Get a new session using DBI:
 
- tie %session, 'Apache::Session::DBI', undef,
-    { DataSource => 'dbi:Oracle:db' };
+ tie %session, 'Apache::Session::MySQL', undef,
+    { DataSource => 'dbi:mysql:sessions' };
     
 Restore an old session from the database:
 
- tie %session, 'Apache::Session::DBI', $session_id,
-    { DataSource => 'dbi:Oracle:db' };
+ tie %session, 'Apache::Session::MySQL', $session_id,
+    { DataSource => 'dbi:mysql:sessions' };
 
 
-=head2 Storing and retrieving from the session
+=head2 Storing and retrieving data to and from the session
 
 Hey, how much easier could it get?
 
@@ -106,7 +97,6 @@ but anything beginning with a "_" is considered reserved for
 future use.
 
  my $id = $session{_session_id};
-
 
 =head2 Permanently removing the session from storage
 
@@ -126,7 +116,12 @@ As you put data into the session hash, Session squirrels it away for
 later use.  When you untie() the session hash, or it passes out of
 scope, Session checks to see if anything has changed. If so, Session 
 gains an exclusive lock and writes the session to the data store.  
-It then releases any locks it has acquired.
+It then releases any locks it has acquired.  
+
+Note that Apache::Session does only a shallow check to see if anything has
+changed.  If nothing changes in the top level tied hash, the data will not be
+updated in the backing store.  You are encouraged to timestamp the session hash
+so that it is sure to be updated.
 
 When you call the delete() method on the session object, the
 object is immediately removed from the object store, if possible.
@@ -134,32 +129,30 @@ object is immediately removed from the object store, if possible.
 When Session encounters an error, it calls die().  You will probably 
 want to wrap your session logic in an eval block to trap these errors.
 
+=head1 LOCKING AND TRANSACTIONS
+
+By default, most Apache::Session implementations only do locking to prevent
+data corruption.  The locking scheme does not provide transactional
+consistency, such as you might get from a relational database.  If you desire
+transactional consistency, you must provide the Transaction argument with a
+true value when you tie the session hash.  For example:
+
+ tie %s, 'Apache::Session::File', $id {
+    Directory     => '/tmp/sessions',
+    LockDirectory => '/var/lock/sessions',
+    Transaction   => 1
+ };
+
+Note that the Transaction argument has no practical effect on the MySQL and
+Postgres implementations.  The MySQL implementation only supports exclusive
+locking, and the Postgres implementation uses the transaction features of that
+database.
+
 =head1 IMPLEMENTATION
 
 The way you implement Apache::Session depends on what you are
 trying to accomplish.  Here are some hints on which classes to
 use in what situations
-
-=over 4
-
-=item Single machine *nix Apache
-
-Use DBIStore and SysVSemaphoreLocker
-
-=item Single machine Win32 Apache
-
-Use DBIStore or MemoryStore, if persistence between server invocations is not
-neccessary.  Use the NullLocker for best speed.
-
-=item Multiple *nix machines
-
-Use DBIStore and the DaemonLocker, or use PosixFileLocker on an NFS mount
-
-=item Multiple machines on multiple platforms
-
-Use DBIStore and DaemonLocker
-
-=back
 
 =head1 STRATEGIES
 
@@ -228,11 +221,14 @@ reader.
  #or a new session if we got no cookie
 
  my %session;
- tie %session, 'Apache::Session::DBI', $cookie,
-     {DataSource => 'dbi:mysql:sessions', #these arguments are
+ tie %session, 'Apache::Session::MySQL', $cookie, {
+      DataSource => 'dbi:mysql:sessions', #these arguments are
       UserName   => 'mySQL_user',         #required when using
-      Password   => 'password'            #DBIStore.pm
-     };
+      Password   => 'password',           #MySQL.pm
+      LockDataSource => 'dbi:mysql:sessions',
+      LockUserName   => 'mySQL_user',
+      LockPassword   => 'password'
+ };
 
  #Might be a new session, so lets give them their cookie back
 
@@ -243,17 +239,15 @@ reader.
 
 =head1 SEE ALSO
 
-Apache::Session::DBIStore, Apache::Session::FileStore, 
-Apache::Session::MemoryStore, Apache::Session::PosixFileLocker,
-Apache::Session::SysVSemaphoreLocker, Apache::Session::NullLocker
-Apache::Session::TreeStore, Apache::Session::Counted
+Apache::Session::MySQL, Apache::Session::Postgres, Apache::Session::File,
+Apache::Session::DB_File
 
-The O Reilly book "Apache Modules in Perl and C" has a chapter
-on keeping state.
+The O Reilly book "Apache Modules in Perl and C", by Doug MacEachern and
+Lincoln Stein, has a chapter on keeping state.
 
 =head1 AUTHORS
 
-Jeffrey Baker <jeffrey@kathyandjeffrey.net> is the author of 
+Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
 
 Andreas J. Koenig <andreas.koenig@anima.de> contributed valuable CPAN
@@ -286,9 +280,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.03';
-
-use MD5; #yes, you need MD5.pm
+$VERSION = '1.50';
 
 #State constants
 #
@@ -344,34 +336,40 @@ sub TIEHASH {
     my $session_id = shift;
     my $args       = shift || {};
 
-    if(ref $args ne "HASH") {
-        die "Additional arguments should be in the form of a hash reference";
-    }
-
     #Set-up the data structure and make it an object
     #of our class
     
     my $self = {
         args         => $args,
         data         => { _session_id => $session_id },
+        serialized   => undef,
         lock         => 0,
-        lock_manager => undef,
+        status       => 0,
+        lock_manager => undef,  # These two are object refs ...
         object_store => undef,
-        status       => 0
+        generate     => undef,  # but these three are subroutine refs
+        serialize    => undef,
+        unserialize  => undef,
     };
     
     bless $self, $class;
+
+    $self->populate;
 
     #If a session ID was passed in, this is an old hash.
     #If not, it is a fresh one.
 
     if (defined $session_id) {
+        if (exists $args->{Transaction} && $args->{Transaction}) {
+            $self->acquire_write_lock;
+        }
+        
         $self->{status} &= ($self->{status} ^ NEW);
         $self->restore;
     }
     else {
         $self->{status} |= NEW;
-        $self->{data}->{_session_id} = generate_id();
+        &{$self->{generate}}($self);
         $self->save;
     }
     
@@ -456,11 +454,8 @@ sub restore {
     
     $self->acquire_read_lock;
 
-    if (!defined $self->{object_store}) {
-        $self->{object_store} = $self->get_object_store;
-    }
-    
     $self->{object_store}->materialize($self);
+    &{$self->{unserialize}}($self);
     
     $self->{status} &= ($self->{status} ^ MODIFIED);
     $self->{status} |= SYNCED
@@ -476,11 +471,7 @@ sub save {
     );
     
     $self->acquire_write_lock;
-    
-    if (!defined $self->{object_store}) {
-        $self->{object_store} = $self->get_object_store;
-    }
-    
+
     if ($self->{status} & DELETED) {
         $self->{object_store}->remove($self);
         $self->{status} |= SYNCED;
@@ -489,12 +480,14 @@ sub save {
         return;
     }
     if ($self->{status} & MODIFIED) {
+        &{$self->{serialize}}($self);
         $self->{object_store}->update($self);
         $self->{status} &= ($self->{status} ^ MODIFIED);
         $self->{status} |= SYNCED;
         return;
     }
     if ($self->{status} & NEW) {
+        &{$self->{serialize}}($self);
         $self->{object_store}->insert($self);
         $self->{status} &= ($self->{status} ^ NEW);
         $self->{status} |= SYNCED;
@@ -539,10 +532,6 @@ sub acquire_read_lock  {
 
     return if ($self->{lock} & READ_LOCK);
 
-    if (!defined $self->{lock_manager}) {
-        $self->{lock_manager} = $self->get_lock_manager;
-    }
-
     $self->{lock_manager}->acquire_read_lock($self);
 
     $self->{lock} |= READ_LOCK;
@@ -552,10 +541,6 @@ sub acquire_write_lock {
     my $self = shift;
 
     return if ($self->{lock} & WRITE_LOCK);
-
-    if (!defined $self->{lock_manager}) {
-        $self->{lock_manager} = $self->get_lock_manager;
-    }
 
     $self->{lock_manager}->acquire_write_lock($self);
 
@@ -567,10 +552,6 @@ sub release_read_lock {
 
     return unless ($self->{lock} & READ_LOCK);
 
-    if (!defined $self->{lock_manager}) {
-        $self->{lock_manager} = $self->get_lock_manager;
-    }
-
     $self->{lock_manager}->release_read_lock($self);
 
     $self->{lock} &= ($self->{lock} ^ READ_LOCK);
@@ -580,10 +561,6 @@ sub release_write_lock {
     my $self = shift;
 
     return unless ($self->{lock} & WRITE_LOCK);
-
-    if (!defined $self->{lock_manager}) {
-        $self->{lock_manager} = $self->get_lock_manager;
-    }
 
     $self->{lock_manager}->release_write_lock($self);
     
@@ -595,26 +572,10 @@ sub release_all_locks {
     
     return unless ($self->{lock} & READ_LOCK || $self->{lock} & WRITE_LOCK);
     
-    if (!defined $self->{lock_manager}) {
-        $self->{lock_manager} = $self->get_lock_manager;
-    }
-
     $self->{lock_manager}->release_all_locks($self);
 
     $self->{lock} &= ($self->{lock} ^ READ_LOCK);
     $self->{lock} &= ($self->{lock} ^ WRITE_LOCK);
 }        
-
-
-
-#
-#Utility methods
-#
-
-
-
-sub generate_id {
-    return substr(MD5->hexhash(time(). {}. rand(). $$. 'blah'), 0, 16);
-}
 
 1;

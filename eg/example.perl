@@ -2,7 +2,7 @@
 #
 # Consult the documentation before trying to run this file.
 # You need a /tmp directory or you need to change the Directory option!
-# This file also assumes PerlSendHeader Off
+# This file also assumes PerlSendHeader Off.
 #
 ######################################################################
 
@@ -23,7 +23,7 @@ $session_id =~ s/^\///;
 $session_id = $session_id ? $session_id : undef;
 
 my %session;
-my $opts = { Directory => '/tmp' };
+my $opts = { Directory => '/tmp', LockDirectory => 'tmp', Transaction => 1 };
 
 tie %session, 'Apache::Session::File', $session_id, $opts;
 

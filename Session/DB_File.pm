@@ -1,30 +1,30 @@
 #############################################################################
 #
-# Apache::Session::File
-# Apache persistent user sessions in the filesystem
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Apache::Session::DB_File
+# A wrapper class
+# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
 
-package Apache::Session::File;
+package Apache::Session::DB_File;
 
 use strict;
 use vars qw(@ISA $VERSION);
 
-$VERSION = '1.50';
+$VERSION = '1.00';
 @ISA = qw(Apache::Session);
 
 use Apache::Session;
 use Apache::Session::Lock::File;
-use Apache::Session::Store::File;
+use Apache::Session::Store::DB_File;
 use Apache::Session::Generate::MD5;
 use Apache::Session::Serialize::Storable;
 
 sub populate {
     my $self = shift;
 
-    $self->{object_store} = new Apache::Session::Store::File $self;
+    $self->{object_store} = new Apache::Session::Store::DB_File $self;
     $self->{lock_manager} = new Apache::Session::Lock::File $self;
     $self->{generate}     = \&Apache::Session::Generate::MD5::generate;
     $self->{serialize}    = \&Apache::Session::Serialize::Storable::serialize;
@@ -35,28 +35,27 @@ sub populate {
 
 1;
 
-
 =pod
 
 =head1 NAME
 
-Apache::Session::File - An implementation of Apache::Session
+Apache::Session::DB_File - An implementation of Apache::Session
 
 =head1 SYNOPSIS
 
- use Apache::Session::File;
+ use Apache::Session::DB_File;
  
- tie %hash, 'Apache::Session::File', $id, {
-    Directory => '/tmp/sessions',
-    LockDir   => '/var/lock/sessions',
+ tie %hash, 'Apache::Session::DB_File', $id, {
+    FileName      => 'sessions.db',
+    LockDirectory => '/var/lock/sessions',
  };
 
 =head1 DESCRIPTION
 
-This module is an implementation of Apache::Session.  It uses the File backing
-store and the File locking scheme.  You must specify the directory for the
-object store and the directory for locking in arguments to the constructor. See
-the example, and the documentation for Apache::Session::Store::File and
+This module is an implementation of Apache::Session.  It uses the DB_File
+backing store and the File locking scheme.  You must specify the filename of
+the database file and the directory for locking in arguments to the constructor.
+See the example, and the documentation for Apache::Session::Store::DB_File and
 Apache::Session::Lock::File.
 
 =head1 AUTHOR
@@ -65,5 +64,5 @@ This module was written by Jeffrey William Baker <jwbaker@acm.org>.
 
 =head1 SEE ALSO
 
-L<Apache::Session::DB_File>, L<Apache::Session::Flex>,
+L<Apache::Session::File>, L<Apache::Session::Flex>,
 L<Apache::Session::MySQL>, L<Apache::Session::Postgres>, L<Apache::Session>
