@@ -9,9 +9,9 @@
 
 package Apache::Session;
 
-$Apache::Session::VERSION = '0.14';
+$Apache::Session::VERSION = '0.16';
 
-use Apache;
+require Apache if exists $ENV{'MOD_PERL'};
 use MD5;
 use Carp;
 
@@ -22,23 +22,30 @@ use constant MAX_TRIES  => $ENV{'SESSION_MAX_ATTEMPTS'} || 5;                 # 
 
 sub new { 
   my $class = shift;
-  my $opt = shift;
+  my $opt   = shift;
+  my $notie = shift;
 
   my ($hashref, $id) = insert( $class );
   return undef unless $hashref;
 
   my $ahash = {};
-  tie( %$ahash, 'Apache::TiedSession', $class, $hashref ) || confess "couldn't create tied hash to $class";
+  if ( !$notie ) {
+    tie( %$ahash, 'Apache::TiedSession', $class, $hashref ) ||
+      confess "couldn't create tied hash to $class";
+  }
+  else {
+    $ahash = $hashref;
+  }
 
   my $self = bless $ahash, $class;
   $self->{'_ID'} = $id;
   
   $opt = options( $opt, $class->options() );
-  foreach my $key (keys %$opt) {
+  foreach my $key ( keys %$opt ) {
     $newkey = '_'.uc( $key );
     $self->{$newkey} = $opt->{$key};
   }
-  
+
   $self->touch();
   
   return $self;  
@@ -48,14 +55,18 @@ sub open {
   my $class = shift;
   my $id    = shift;
   my $opt   = shift;
+  my $notie = shift;
 
   my $session = $class->fetch( $id );
   return undef unless ( ref ( $session ) =~ /HASH/);
-  
+
   my $ahash = {};
   my $self = bless $ahash, $class;
   
-  tie (%$self, 'Apache::TiedSession', $class, $session)  || confess "couldn't create tied hash to $class";
+  if ( !$notie ) {
+    tie (%$self, 'Apache::TiedSession', $class, $session)  ||
+       confess "couldn't create tied hash to $class";
+  }
 
   $opt = options( $opt, $class->options() );
   foreach my $key (keys %$opt) {
@@ -104,36 +115,38 @@ sub options {
 }
 
 sub touch {
-  my $self = shift;
+  my $self    = shift || {};
   my $control = shift;
-  
+
+  return undef unless exists $self->{'_LIFETIME'};  
+
   $self->{'_ACCESSED'} = time();
-  $self->{'_EXPIRES'} = time() + $self->{'_LIFETIME'};
+  $self->{'_EXPIRES'}  = time() + $self->{'_LIFETIME'};
   
   return $self->{'_EXPIRES'};
 }
 
 sub store {
   my $self = shift;
-  my $data  = shift;
+  my $data = shift;
   
   if ( ref( $self ) ) { # called via $obj->store()
     my $key;
     my $hashref;
-    foreach $key (keys %$self) {
+    foreach $key ( keys %$self ) {
       $hashref->{$key} = $self->{$key};
     }
-    return $self->commit($hashref);
+    return $self->commit( $hashref );
   }
   else { # called via $class->store($data)
-    return $self->commit($data);
+    return $self->commit( $data );
   }
 }
 
 sub hash {
   my $value = shift;
 
-  return substr(MD5->hexhash($value),0,ID_LENGTH);
+  return substr( MD5->hexhash( $value ), 0, ID_LENGTH );
 }
 
 sub id {
@@ -157,15 +170,154 @@ sub rewrite {
   
   return "http://$name$port$uri/$self->{ '_ID' }";
 }
+
+# --------- start of tied interface to Apache::Session --------------
+
+sub create_session_object {
+  my ($self) = @_;
+
+  my $sessionobj = $self->{'DATA'};
+
+  return $sessionobj if ( $sessionobj );
+
+  my $id = $self->{'ID'};
+  my $subclass = $self->{'SUBCLASS'};
+
+  if ( $id ) {
+    $sessionobj = $subclass->open ($id, $self->{'OPTIONS'}, 1) or die "Cannot open session $id";
+  }
+
+  if ( !$sessionobj ) {
+    $sessionobj = $subclass->new( $self->{'OPTIONS'}, 1 ) or die "Cannot create new session";
+    $self->{'ID'} = $sessionobj->id;
+  }
+
+  $self->{'DATA'} = $sessionobj;
+
+  return $sessionobj;
+}
+
+
+sub TIEHASH {
+  my ( $class, $subclass, $id, $options ) = @_;
+
+  $subclass = $class.'::'.$subclass if ( !( $subclass =~ /::/ ) );
+  $options  = {} if ( !$options );
+
+  my $this = {
+    'ID'               => $id,
+    'SUBCLASS'         => $subclass,
+    'DATA'             => undef,
+    'OPTIONS'          => $options,
+    'STORE_ON_DESTROY' => defined ( $options->{'store_on_destroy'} ) ? $options->{'store_on_destroy'} : 1,
+    'AUTOCOMMIT'       => $options->{'autocommit'} || 0,
+    'DIRTY'            => 0
+  };
+
+  my $self = bless $this, $class;
+
+  $self->create_session_object if ( $options->{ 'not_lazy' } );
+
+  return $self;
+}
+
+sub FIRSTKEY {            # start key-looping
+  my $self = shift;
+
+  my $so = $self->{'DATA'};
+  $so = $self->create_session_object if ( !$self->{'DATA'} && $self->{'ID'} );
+  my $reset = scalar keys %{ $so };
+  each %{ $so };
+}
+
+sub NEXTKEY {            # continue key-looping 
+  my $self = shift;
+
+  return each %{ $self->{'DATA'} };
+}
+
+sub EXISTS {
+  my $self = shift;
+  my $key  = shift;
+
+  $self->create_session_object  if ( !$self->{'DATA'} && $self-> {'ID'}) ;
+
+  return exists $self->{'DATA'}->{$key};
+}
+
+sub CLEAR {
+  my $self = shift;
+  $self->{'DATA'} = undef;
+  carp( "CLEAR operation not supported" );
+}
+
+sub STORE {
+  my $self = shift;
+  my $key  = shift;
+  my $val  = shift;
+
+  my $rv;
+  warn "Okay, got to STORE";
+  $self->create_session_object if ( !$self->{'DATA'} );
+
+  $rv = $self->{'DATA'}->{$key} = $val;
+  if ( $self->{'STORE_ON_DESTROY'} ) { 
+    $self->{'DIRTY'} = 1; 
+  }
+  elsif ( $self->{'AUTOCOMMIT'} ) { 
+    $self->{'DATA'}->store;
+  }
+
+  return $rv;
+}
+
+sub FETCH {
+  my $self = shift;
+  my $key = shift;
+  
+  return $self->{'ID'} if ($key eq '_ID');
+
+  my $rv;
+  $self->create_session_object if (!$self->{'DATA'} && $self-> {'ID'} );
+  
+  $rv = $self->{'DATA'}->{$key};
+  
+  return $rv;
+}
+
+sub DELETE {
+  my $self = shift;
+  my $key = shift;
+  my $rv;
+
+  $self->create_session_object if ( !$self->{'DATA'} );
+
+  $rv = $self->{$key};
+  $self->{$key} = undef;
+
+  if ( $self->{'STORE_ON_DESTROY'} ) {
+    $self->{'DIRTY'} = 1;
+  }
+  elsif ( $self->{'AUTOCOMMIT'}) {
+    $self->{'DATA'}->store;
+  }
+
+  return $rv;
+}
+
+sub DESTROY {
+  my $self = shift;
+  warn "Now would be a good time to commit..";
+  $self->{'DATA'}->store if $self->{'DIRTY'};
+}
+
+
 # -------------- end of package Apache::Session ---------------
 
 package Apache::TiedSession;
 
-# these define the proper methods for getting through to the proper bits of
-# information associated with a tied Apache session.  Some are for run-time
-# options and some are for persistent session information.  Think of them as
-# options for authors of storage subclasses and for users of storage
-# subclasses, respectively.
+#this is how Apache::Session talks to the storage subclasses, unless the user
+#chooses to use the tied hash interface.
 
 use Carp;
 
@@ -198,7 +350,7 @@ sub NEXTKEY {            # continue key-looping
 
 sub EXISTS {
   my $self = shift;
-  my $key =shift;
+  my $key  = shift;
 
   return exists $self->{'DATA'}->{$key};
 }
@@ -209,20 +361,20 @@ sub CLEAR {
 
 sub STORE {
   my $self = shift;
-  my $key = shift;
-  my $val = shift;
+  my $key  = shift;
+  my $val  = shift;
   
   my $rv;
   
   $rv = $self->{'DATA'}->{$key} = $val;
-  $self->{'CLASS'}->store($self->{'DATA'}) if $self->{'DATA'}->{'_AUTOCOMMIT'};
+  $self->{'CLASS'}->store( $self->{'DATA'} ) if $self->{'DATA'}->{'_AUTOCOMMIT'};
   
   return $rv;
 }
 
 sub FETCH {
   my $self = shift;
-  my $key = shift;
+  my $key  = shift;
   
   my $rv;
   
@@ -232,20 +384,20 @@ sub FETCH {
 }
 
 sub DELETE {
-  warn "untested: DELETE(@_)";
-  
   my $self = shift;
-  my $key = shift;
+  my $key  = shift;
 
   my $rv;
 
-  $rv = $self->{$key};    
-  $self->{$key} = undef;
-
-  $self->{'CLASS'}->store($self->{'DATA'}) if $self->{'DATA'}->{'_AUTOCOMMIT'};
+  $rv = $self->{'DATA'}->{$key};
+  delete $self->{'DATA'}->{$key};
+  
+  $self->{'CLASS'}->store( $self->{'DATA'} ) if $self->{'DATA'}->{'_AUTOCOMMIT'};
 
   return $rv;
 }
+
+1;
 
 # ------------ end of package Apache::TiedSession
 

@@ -12,50 +12,64 @@ package Apache::Session::DBI;
 use Apache::Session ();
 
 @Apache::Session::DBI::ISA = qw(Apache::Session);
-$Apache::Session::DBI::VERSION = '0.02';
+$Apache::Session::DBI::VERSION = '0.04';
 
 use Carp;
 use DBI;
 use FreezeThaw qw(freeze thaw);
 use strict;
 
-use constant DSN   => $ENV{'SESSION_DBI_DATASOURCE'} || croak "SESSION_DBI_DATASOURCE not set";
+use constant DSN   => $ENV{'SESSION_DBI_DATASOURCE'} || warn "SESSION_DBI_DATASOURCE should be set in httpd.conf";
 use constant USER  => $ENV{'SESSION_DBI_USERNAME'}   || undef;
 use constant PASS  => $ENV{'SESSION_DBI_PASSWORD'}   || undef;
 
-my $db_ac = ( DSN =~ /mSQL/ || DSN =~ /mysql/)  ? 1 : 0; #m(y)SQL doesn't support transactions
+my $db_ac = ( DSN =~ /mSQL|mysql/ )  ? 1 : 0; #m(y)SQL doesn't support transactions
 
-my $dbh = DBI->connect(DSN, USER, PASS, {
-   PrintError => 1,
-   AutoCommit => $db_ac
-}) || die $DBI::errstr;
+my ( $dbh, $sth_lock, $sth_unlock, $sth_destroy, $sth_create, $sth_update, $sth_get_length );
+sub init_connection {
+  if ( $dbh ) {
+    eval {
+      local $SIG{__DIE__};
+      $dbh->ping() || die;
+    };
+    if ( !$@ ) {
+      return;
+    }
+  }
 
-#preparing the statement handles and using bind_param at runtime 
-#results in about 2x speed improvement on my system
-my $sth_lock    = $dbh->prepare( "INSERT INTO locks (id) VALUES (?)" ) || die $DBI::errstr;
-my $sth_unlock  = $dbh->prepare( "DELETE FROM locks WHERE id = ?" ) || die $DBI::errstr;
-my $sth_get     = $dbh->prepare( "SELECT id, session FROM sessions WHERE id = ?" ) || die $DBI::errstr;
-my $sth_destroy = $dbh->prepare( "DELETE FROM sessions WHERE id = ?" ) || die $DBI::errstr;
-my $sth_create  = $dbh->prepare( "INSERT INTO sessions (id, session) VALUES ( ?, ? )" ) || die $DBI::errstr;
-my $sth_update  = $dbh->prepare( "UPDATE sessions SET session = ? WHERE id = ?" ) || die $DBI::errstr;
+  warn "Session manager opening persistent connection";
+  
+  $dbh = DBI->connect(DSN, USER, PASS, {
+     PrintError  => 1,
+     RaiseError  => 1,
+     AutoCommit  => $db_ac,
+     LongReadLen => 0
+  }) || die $DBI::errstr;
+
+  #preparing the statement handles and using bind_param at runtime 
+  #results in about 2x speed improvement on my system
+  $sth_lock       = $dbh->prepare( "INSERT INTO locks VALUES ( ? )" )                                       || die $DBI::errstr;
+  $sth_unlock     = $dbh->prepare( "DELETE FROM locks WHERE id = ?" )                                          || die $DBI::errstr;
+  $sth_destroy    = $dbh->prepare( "DELETE FROM sessions WHERE id = ?" )                                       || die $DBI::errstr;
+  $sth_create     = $dbh->prepare( "INSERT INTO sessions (id, expires, length, a_session) VALUES ( ?, ?, ?, ? )" )         || die $DBI::errstr;
+  $sth_update     = $dbh->prepare( "UPDATE sessions SET a_session = ?, length = ?, expires = ? WHERE id = ?" ) || die $DBI::errstr;
+  $sth_get_length = $dbh->prepare( "SELECT length FROM sessions WHERE id = ?" )                                || die $DBI::errstr;
+}
 
 sub glock {
   my $id = shift;
   return undef unless $id;
 
-#  my $dbh = safe_connect();
-#  if (!$dbh) {
-#    return undef;
-#  }
+  init_connection;
 
-  $sth_lock->bind_param( 1, $id, $DBI::SQL_STRING );
   eval {
     local $SIG{__DIE__};
-    $sth_lock->execute() || die $DBI::errstr;
+    $sth_lock->bind_param( 1, $id, $DBI::SQL_VARCHAR );
+    $sth_lock->execute();
   };
     
   if ($@) {
-    warn "Lock for $id failed: $@";
+    warn "Lock for session $id failed: $@";
     $dbh->rollback() unless $db_ac;
     return undef;
   }
@@ -66,14 +80,12 @@ sub glock {
 
 sub gunlock {
   my $id = shift;
-#  my $dbh = safe_connect();
-#  if (!$dbh) {
-#    return undef;
-#  }
 
-  $sth_unlock->bind_param( 1, $id, $DBI::SQL_STRING );
+  init_connection;
+
   eval {
     local $SIG{__DIE__};
+    $sth_unlock->bind_param( 1, $id, $DBI::SQL_VARCHAR );
     $sth_unlock->execute() || die $DBI::errstr;
   };
   
@@ -108,7 +120,7 @@ sub safe_connect {
 
 sub safe_thaw {
   my $frozen = shift;
-  return undef unless ( $frozen =~ /FrT/ );
+  return undef unless ( $frozen =~ /^FrT/ );
   return thaw( $frozen );
 }
 
@@ -122,11 +134,18 @@ sub create {
   my $class = shift;
   my $id    = shift;
   return undef unless glock( $id );
-  
-  $sth_get->bind_param( 1, $id, $DBI::SQL_STRING );
+
+  init_connection;
+
+  my $sth_get = "";
+  my $expires = 0;
   eval {
     local $SIG{__DIE__};
+    $sth_get = $dbh->prepare( "SELECT expires FROM sessions WHERE id = ?" ) || die $DBI::errstr;
+    $sth_get->bind_param( 1, $id, $DBI::SQL_VARCHAR );
     $sth_get->execute() || die $DBI::errstr;
+    $sth_get->bind_columns( undef, \$expires);
+    $sth_get->fetch;
   };
   
   if ( $@ ) {
@@ -134,82 +153,87 @@ sub create {
     gunlock( $id );
     return undef;
   }
-  
-  my( $old_id, $old_data );
-  $sth_get->bind_columns( undef, \$old_id, \$old_data );
-  $sth_get->fetch;
-  
-  if ( $old_id ) { #if this session already exists...
-    my $oldhash = safe_thaw( $old_data );
-    unless ( $oldhash =~ /HASH/ ) {
+
+  if ( $expires < time() ) { #check its expiration time
+    eval {
+      local $SIG{__DIE__};
+      $sth_destroy->bind_param( 1, $id, $DBI::SQL_VARCHAR );
+      $sth_destroy->execute() || die $DBI::errstr;
+    };
+
+    if ( $@ ) {
+      warn "Destruction of expired session $id failed: $@";
       gunlock( $id );
+      $dbh->rollback() unless $db_ac;
       return undef;
     }
-    if ( $oldhash->{ '_EXPIRES' } < time() ) { #check its expiration time
-      $sth_destroy->bind_param( 1, $id, $DBI::SQL_STRING );
-      eval {
-        local $SIG{__DIE__};
-        $sth_destroy->execute() || die $DBI::errstr;
-      };
-      
-      if ( $@ ) {
-        gunlock( $id );
-        $dbh->rollback() unless $db_ac;
-        return undef;
-      }
 
-      $dbh->commit() unless $db_ac;
-    }
+    $dbh->commit() unless $db_ac;
+  }
 
-    else { #old session wasn't expired yet
-      gunlock( $id );
-      return undef;
-    }
+  else { #old session wasn't expired yet
+    gunlock( $id );
+    return undef;
   }
   
   my $rv = {};
   my $frozen = freeze( $rv );
 
-  $sth_create->bind_param( 1, $id, $DBI::SQL_STRING );
-  $sth_create->bind_param( 2, $frozen, $DBI::SQL_STRING );
   
   eval {
     local $SIG{__DIE__};
+    $sth_create->bind_param( 1, $id,               $DBI::SQL_VARCHAR );
+    $sth_create->bind_param( 2, undef,             $DBI::SQL_INTEGER );    
+    $sth_create->bind_param( 3, length( $frozen ), $DBI::INTEGER );
+    $sth_create->bind_param( 4, $frozen,           $DBI::SQL_VARCHAR );
     $sth_create->execute() || die $DBI::errstr;
   };
   
   if ($@) {
-    gunlock( $id );
+    warn "Database error in create(): $@";
     $dbh->rollback() unless $db_ac; 
     return undef;
   }
 
   $dbh->commit() unless $db_ac;
-  
   return $rv;
 }
 
 sub fetch {
   my $class = shift;
   my $id    = shift;
-    
+  
+  init_connection;
+  
   return undef unless glock( $id );
-
-  $sth_get->bind_param( 1, $id, $DBI::SQL_STRING );
+  
+  my $length;
   eval {
     local $SIG{__DIE__};
-    $sth_get->execute() || die $DBI::errstr;
+    $sth_get_length->bind_param( 1, $id, $DBI::SQL_VARCHAR );
+    $sth_get_length->execute();
+    ( $length ) = $sth_get_length->fetchrow_array();
   };
+
+  $dbh->{'LongReadLen'} = $length;
   
+  my ($sth_get, $db_id, $db_data);
+  eval {
+    local $SIG{__DIE__};
+    $sth_get = $dbh->prepare( "SELECT id, a_session FROM sessions WHERE id = ?" ) || die $DBI::errstr;
+    $sth_get->bind_param( 1, $id, $DBI::SQL_VARCHAR );
+    $sth_get->execute() || die $DBI::errstr;
+    $sth_get->bind_columns(undef, \$db_id, \$db_data);
+    $sth_get->fetch();
+  };
+
+  $dbh->{'LongReadLen'} = 0;
+
   if ( $@ ) {
     warn "Fetch failed for session $id: $@";
     gunlock( $id );
     return undef;
   }
-  
-  my ($db_id, $db_data);
-  $sth_get->bind_columns(undef, \$db_id, \$db_data);
-  $sth_get->fetch;
   
   my ( $oldhash ) = safe_thaw( $db_data );
   
@@ -224,15 +248,18 @@ sub fetch {
 sub commit {
   my $class   = shift;
   my $hashref = shift;
+
+  init_connection;
   
   my $id = $hashref->{ '_ID' };
   my $frozen_self = freeze ($hashref);
 
-  $sth_update->bind_param( 1, $frozen_self, $DBI::SQL_STRING );
-  $sth_update->bind_param( 2, $id, $DBI::SQL_STRING );
-  
   eval {  
     local $SIG{__DIE__}; 
+    $sth_update->bind_param( 1, $frozen_self, $DBI::SQL_VARCHAR );
+    $sth_update->bind_param( 2, length( $frozen_self ), $DBI::SQL_VARCHAR );
+    $sth_update->bind_param( 3, $hashref->{'_EXPIRES'}, $DBI::SQL_INTEGER );
+    $sth_update->bind_param( 4, $id, $DBI::SQL_VARCHAR );
     $sth_update->execute() || die $DBI::errstr;
   };
   
@@ -249,10 +276,11 @@ sub destroy {
   my $self = shift;
   my $id   = $self->{ '_ID' };
     
-  $sth_destroy->bind_param( 1, $id, $DBI::SQL_STRING );
+  init_connection;
   
   eval {
     local $SIG{__DIE__}; 
+    $sth_destroy->bind_param( 1, $id, $DBI::SQL_VARCHAR );
     $sth_destroy->execute() || die $DBI::errstr;
   };
   
@@ -275,11 +303,11 @@ sub DESTROY {
   
 sub dump_to_html {
   my $self = shift;
-  my $s;
-  my $key;
+  my $s = "";
+  my $key = "";
   
   $s = $s."<table border=1>\n\t<tr>\n\t\t<td>Variable Name</td>\n\t\t<td>Scalar Value</td>\n\t</tr>";
-  foreach $key (sort(keys(% { $self }))) {
+  foreach $key ( sort( keys( % { $self } ) ) ) {
       $s = $s."\n\t<tr>\n\t\t<td>$key</td>\n\t\t<td>$self->{$key}</td>";
   }
   $s = $s."\n</table>\n";
@@ -315,8 +343,8 @@ Transaction support is not critical, but it can help stop the madness when
 something goes awry.
 
 You will need to create two tables in your database for Session::DBI to use.
-They are named "sessions" and "locks".  Sessions should have two columns, 
-"id" and "session", where id is the primary key or unique index.  id should
+They are named "sessions" and "locks".  Sessions should have four columns, 
+"id", "expires", "length", and "session", where id is the primary key or unique index.  id should
 have a datatype of CHAR(n), where n is the length of your session id (default 
 16).  The column "session" needs to be a variable-length field which can hold
 ASCII data.  Depending on you DBMS, "session" will be of type TEXT or LONG.  A
@@ -324,11 +352,17 @@ typical SQL statement to setup this table might look like:
  
  CREATE TABLE sessions (
    id CHAR(16) NOT NULL, 
-   sessions TEXT, 
+   expires INTEGER,
+   length INTEGER,
+   a_session TEXT, 
    PRIMARY KEY ( id ) 
  )
 
-The table "locks" needs on ly one column, "id", which is identical to the id
+The "expires" column is largely ignored by the module.  Since the module
+does not actively garbage collect, this column is conveniently provided so
+that you can clean out your sessions table occassionally.
+
+The table "locks" needs only one column, "id", which is identical to the id
 in "sessions".  It is essential that "id" be a unique index.  For example:
 
  CREATE TABLE locks (

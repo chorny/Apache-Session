@@ -17,7 +17,7 @@ use Carp;
 use Storable qw(nstore_fd retrieve_fd);
 use strict;
 
-use constant DIR   => $ENV{'SESSION_FILE_DIRECTORY'}   || croak "SESSION_FILE_DIRECTORY not set";
+use constant DIR   => $ENV{'SESSION_FILE_DIRECTORY'}   || "/tmp";
 use constant HOLD  => $ENV{'SESSION_FILE_LOCK_TIMEOUT'}|| 60;
 
 #BEGIN: {
@@ -43,23 +43,29 @@ use constant HOLD  => $ENV{'SESSION_FILE_LOCK_TIMEOUT'}|| 60;
 
 sub options {
   { autocommit => 0,
-    lifetime   => $ENV{'SESSION_LIFETIME'}
+    lifetime   => ( $ENV{'SESSION_LIFETIME'} || 3600 )
   };
 }
 
 sub lock {
   my $fn = shift;
   my $lifetime = HOLD;
-  
+
   if (-e "$fn.lock") {
     open (OLDLOCK, "<$fn.lock") || warn "Couldn't open old lock for read, $^E", return undef;
-    my @lockinfo = <OLDLOCK>;
+    my @lockinfo;
+    while ( <OLDLOCK> ) {
+      chomp $_;
+      push @lockinfo, $_;
+    }
+
     close OLDLOCK;
-    if ($lockinfo[2] < time()) {
+
+    if ( $lockinfo[2] < time() ) {
       unlink "$fn.lock";
     }
     else {
-      if ( ( $lockinfo[0] == $$ ) && ( $lockinfo[1] == $ENV{'SERVER_NAME'} )) {
+      if ( ( $lockinfo[0] == $$ ) && ( $lockinfo[1] eq $ENV{'SERVER_NAME'} )) {
         unlink "$fn.lock";
       }
       else {
@@ -69,10 +75,11 @@ sub lock {
   }
 
   open (LOCK, ">$fn.lock") || warn "couldn't open lockfile for write: $^E", return undef;
-  
   my $expires = time() + $lifetime;
-  print LOCK "$$\n$ENV{'SERVER_NAME'}\n$expires";
-    
+  my $name = $ENV{'SERVER_NAME'} || `hostname`;
+  chomp $name;
+  print LOCK "$$\n$name\n$expires";
+  
   return close LOCK;
 
 }
@@ -93,8 +100,7 @@ sub commit {
   my $hashref = shift;
   my $id = $hashref->{ '_ID' };
   my $fh = DIR."/".$id;
-   
-  lock($fh) || warn "Couldn't get a lock to store $id", return undef;
+  
   open(ME, ">$fh") || warn "Couldn't store() session $id: $^E", return undef;
   nstore_fd $hashref, \*ME;
   close ME || warn "Close failed in store(): $^E", return undef;
@@ -116,9 +122,8 @@ sub fetch {
     local $SIG{__DIE__};
     $hashref = retrieve_fd(*ME);
   };
-    
-  close ME || warn "Close failed for session $id";
   
+  close ME || warn "Close failed for session $id";
   return $hashref;
 }
 
@@ -179,7 +184,6 @@ sub DESTROY {
   my $self = shift;
   my $id = $self->{'_ID'};
   my $fh = DIR."/".$id;
-
   unlock($fh);
 }
 

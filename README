@@ -1,13 +1,13 @@
 ---------------------------------------------------------------------------
 
-     18 July 1998               Jeffrey Baker <jeff@godzilla.tamu.edu>
+     15 September 1998           Jeffrey Baker <jeff@godzilla.tamu.edu>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 0.14.
+This is Apache::Session 0.16.
 
 These modules are used to keep persistent user data across http requests.
 Apache::Session was designed for use with Apache and mod_perl.
@@ -22,7 +22,7 @@ PREREQUISITES
 -------------
 
 Build and install Perl (pref. 5.004_04), Apache (pref. 1.3.0) and mod_perl
-(pref. 1.14).  To use Apache::Session at all, you must have the MD5 module,
+(pref. 1.15).  To use Apache::Session at all, you must have the MD5 module,
 available on CPAN (http://www.perl.com/CPAN).
 
 Apache::Session::DBI needs DBI and at least one DBD, plus FreezeThaw, 
@@ -40,8 +40,8 @@ system.
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-0.14.tar.gz
-cd Apache-Session-0.14
+tar -xvzf Apache-Session-0.15.tar.gz
+cd Apache-Session-0.15
 perl Makefile.PL
 make
 make test
@@ -50,6 +50,10 @@ make install
 Substitute "nmake" for "make" above if you are using Windows.
 
 Consult the pod for the storage mechanism that you plan on using.
+
+This version of Apache::Session::DBI is not backward compatible
+with the table structure from version 0.14.  Please see perldoc
+Apache::Session::DBI.
 
 EXAMPLE
 -------
@@ -86,6 +90,12 @@ AUTHORS
 -------
 
 Jeffrey Baker is the author of Apache::Session.
+
+Gerald Richter <richter@ecos.de> wrote the tied hash interface and
+kickstarted the test suite.
+
+Jochen Wiedeman <joe@ipsoft.de> contributed patches for bugs and
+improved performance.
 
 Randy Harmon <rjharmon@uptimecomputers.com> created storage independence
 through subclassing, with useful comments, suggestions, and source code

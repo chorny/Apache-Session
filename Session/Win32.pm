@@ -69,6 +69,8 @@ sub commit {
   my $hashref = shift;
   my $id = $hashref->{ '_ID' };
   
+
+  $Apache::Session::Win32::sessions->{$id} = {};
   my $key;
   foreach $key (keys %$hashref) {
     $Apache::Session::Win32::sessions->{ $id }->{ $key } = $hashref->{$key};
