@@ -10,10 +10,12 @@ Session/Flex.pm
 Session/Generate/MD5.pm
 Session/Generate/ModUniqueId.pm
 Session/Generate/ModUsertrack.pm
+Session/Informix.pm
 Session/Lock/File.pm
 Session/Lock/MySQL.pm
 Session/Lock/Null.pm
 Session/Lock/Semaphore.pm
+Session/Lock/Sybase.pm
 Session/MySQL.pm
 Session/Oracle.pm
 Session/Postgres.pm
@@ -24,6 +26,7 @@ Session/Serialize/UUEncode.pm
 Session/Store/DBI.pm
 Session/Store/DB_File.pm
 Session/Store/File.pm
+Session/Store/Informix.pm
 Session/Store/MySQL.pm
 Session/Store/Oracle.pm
 Session/Store/Postgres.pm
@@ -47,6 +50,7 @@ t/99filelock.t
 t/99filestore.t
 t/99flex.t
 t/99md5gen.t
+t/99moduniqgen.t
 t/99mysql.t
 t/99mysqllock.t
 t/99mysqlstore.t
@@ -56,4 +60,4 @@ t/99postgres.t
 t/99semaphore.t
 t/99storable.t
 t/99uue.t
-t/99moduniqgen.t
+META.yml                                 Module meta-data (added by MakeMaker)

@@ -2,7 +2,7 @@
 #
 # Apache::Session::Store::MySQL
 # Implements session object storage via MySQL
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -17,7 +17,7 @@ use Apache::Session::Store::DBI;
 use vars qw(@ISA $VERSION);
 
 @ISA = qw(Apache::Session::Store::DBI);
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 $Apache::Session::Store::MySQL::DataSource = undef;
 $Apache::Session::Store::MySQL::UserName   = undef;
@@ -28,6 +28,8 @@ sub connection {
     my $session = shift;
     
     return if (defined $self->{dbh});
+
+	$self->{'table_name'} = $session->{args}->{TableName} || $Apache::Session::Store::DBI::TableName;
 
     if (exists $session->{args}->{Handle}) {
         $self->{dbh} = $session->{args}->{Handle};
@@ -89,7 +91,8 @@ Session data is stored in a MySQL database.
 =head1 SCHEMA
 
 To use this module, you will need at least these columns in a table 
-called 'sessions':
+called 'sessions', or another table name if you provide the TableName
+argument:
 
  id char(32)     # or however long your session IDs are.
  a_session text
@@ -118,6 +121,10 @@ connecting to the database.  These values can be set using the options hash
 
 =item Password
 
+=item TableName
+
+=item Handle
+
 =back
 
 Example:
@@ -125,7 +132,8 @@ Example:
  tie %hash, 'Apache::Session::MySQL', $id, {
      DataSource => 'dbi:mysql:database',
      UserName   => 'database_user',
-     Password   => 'K00l'
+     Password   => 'K00l',
+     TableName  => 'sessions'
  };
 
 Instead, you may pass in an already-opened DBI handle to your database.

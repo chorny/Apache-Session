@@ -2,7 +2,7 @@
 #
 # Apache::Session::Store::DBI
 # A base class for the MySQL, Postgres, and other DBI stores
-# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -14,12 +14,14 @@ use DBI;
 
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.02';
+
+$Apache::Session::Store::DBI::TableName = "sessions";
 
 sub new {
     my $class = shift;
-    
-    return bless {}, $class;
+
+    return bless { table_name => $Apache::Session::Store::DBI::TableName }, $class;
 }
 
 sub insert {
@@ -33,7 +35,7 @@ sub insert {
     if (!defined $self->{insert_sth}) {
         $self->{insert_sth} = 
             $self->{dbh}->prepare_cached(qq{
-                INSERT INTO sessions (id, a_session) VALUES (?,?)});
+                INSERT INTO $self->{'table_name'} (id, a_session) VALUES (?,?)});
     }
 
     $self->{insert_sth}->bind_param(1, $session->{data}->{_session_id});
@@ -56,7 +58,7 @@ sub update {
     if (!defined $self->{update_sth}) {
         $self->{update_sth} = 
             $self->{dbh}->prepare_cached(qq{
-                UPDATE sessions SET a_session = ? WHERE id = ?});
+                UPDATE $self->{'table_name'} SET a_session = ? WHERE id = ?});
     }
 
     $self->{update_sth}->bind_param(1, $session->{serialized});
@@ -78,7 +80,7 @@ sub materialize {
     if (!defined $self->{materialize_sth}) {
         $self->{materialize_sth} = 
             $self->{dbh}->prepare_cached(qq{
-                SELECT a_session FROM sessions WHERE id = ?});
+                SELECT a_session FROM $self->{'table_name'} WHERE id = ?});
     }
     
     $self->{materialize_sth}->bind_param(1, $session->{data}->{_session_id});
@@ -107,7 +109,7 @@ sub remove {
     if (!defined $self->{remove_sth}) {
         $self->{remove_sth} = 
             $self->{dbh}->prepare_cached(qq{
-                DELETE FROM sessions WHERE id = ?});
+                DELETE FROM $self->{'table_name'} WHERE id = ?});
     }
 
     $self->{remove_sth}->bind_param(1, $session->{data}->{_session_id});

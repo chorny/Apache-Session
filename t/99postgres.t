@@ -6,14 +6,14 @@ if ($@ || !$ENV{APACHE_SESSION_MAINTAINER}) {
 
 use Apache::Session::Postgres;
 
-print "1..8\n";
+print "1..10\n";
 
 my $s = {};
 
 tie %$s, 'Apache::Session::Postgres', undef, {
     DataSource => 'dbi:Pg:dbname=sessions', 
-    UserName => 'pg', 
-    Password => 'pg',
+    UserName => 'postgres', 
+    Password => '',
     Commit   => 1
 };
 
@@ -42,8 +42,8 @@ $s = {};
 
 tie %$s, 'Apache::Session::Postgres', $id, {
     DataSource => 'dbi:Pg:dbname=sessions', 
-    UserName => 'pg', 
-    Password => 'pg',
+    UserName => 'postgres', 
+    Password => '',
     Commit   => 1
 };
 
@@ -72,9 +72,13 @@ untie %$s;
 undef $s;
 $s = {};
 
-my $dbh = DBI->connect('dbi:Pg:dbname=sessions', 'pg', 'pg', {RaiseError => 1, AutoCommit => 0});
-
-tie %$s, 'Apache::Session::Postgres', $id, {Handle => $dbh, Commit => 0};
+tie %$s, 'Apache::Session::Postgres', undef, {
+    DataSource => 'dbi:Pg:dbname=sessions', 
+    UserName => 'postgres', 
+    Password => '',
+    Commit   => 1,
+    TableName => 's'
+};
 
 if (tied %$s) {
     print "ok 6\n";
@@ -83,18 +87,40 @@ else {
     print "not ok 6\n";
 }
 
-if ($s->{_session_id} eq $id) {
+if (exists($s->{_session_id})) {
     print "ok 7\n";
 }
 else {
     print "not ok 7\n";
 }
 
-if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
+untie %$s;
+undef $s;
+$s = {};
+
+my $dbh = DBI->connect('dbi:Pg:dbname=sessions', 'postgres', '', {RaiseError => 1, AutoCommit => 0});
+
+tie %$s, 'Apache::Session::Postgres', $id, {Handle => $dbh, Commit => 0};
+
+if (tied %$s) {
     print "ok 8\n";
 }
 else {
     print "not ok 8\n";
+}
+
+if ($s->{_session_id} eq $id) {
+    print "ok 9\n";
+}
+else {
+    print "not ok 9\n";
+}
+
+if ($s->{foo} eq 'bar' && $s->{baz}->[0] eq 'tom' && $s->{baz}->[2] eq 'harry'){
+    print "ok 10\n";
+}
+else {
+    print "not ok 10\n";
 }
 
 tied(%$s)->delete;

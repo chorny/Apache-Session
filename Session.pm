@@ -2,7 +2,7 @@
 #
 # Apache::Session
 # Apache persistent user sessions
-# Copyright(c) 1998, 1999, 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 1998, 1999, 2000, 2001, 2004 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 #############################################################################
@@ -49,12 +49,12 @@ altogether.
 Apache::Session consists of five components: the interface, the object store,
 the lock manager, the ID generator, and the serializer.  The interface is
 defined in Session.pm, which is meant to be easily subclassed.  The object
-store can be the filesystem, a Berkeley DB, a MySQL DB, an Oracle DB, or a
-Postgres DB. Locking is done by lock files, semaphores, or the locking
-capabilities of MySQL and Postgres.  Serialization is done via Storable, and
-optionally  ASCII-fied via MIME or pack().  ID numbers are generated via MD5. 
-The reader is encouraged to extend these capabilities to meet his own
-requirements.
+store can be the filesystem, a Berkeley DB, a MySQL DB, an Oracle DB, a
+Postgres DB, Sybase, or Informix. Locking is done by lock files, semaphores, or
+the locking capabilities of the various databases.  Serialization is done via
+Storable, and optionally ASCII-fied via MIME or pack().  ID numbers are
+generated via MD5.  The reader is encouraged to extend these capabilities to
+meet his own requirements.
 
 A derived class of Apache::Session is used to tie together the three
 components.  The derived class inherits the interface from Apache::Session, and
@@ -244,7 +244,7 @@ cookies to generate and maintain session IDs.
 =head1 SEE ALSO
 
 Apache::Session::MySQL, Apache::Session::Postgres, Apache::Session::File,
-Apache::Session::DB_File
+Apache::Session::DB_File, Apache::Session::Oracle, Apache::Session::Sybase
 
 The O Reilly book "Apache Modules in Perl and C", by Doug MacEachern and
 Lincoln Stein, has a chapter on keeping state.
@@ -290,6 +290,21 @@ storage-independent object interface with input from:
   Jules Bean <jmlb2@hermes.cam.ac.uk>
   Lincoln Stein <lstein@cshl.org>
 
+Jamie LeTaul <jletual@kmtechnologies.com> fixed file locking on Windows.
+
+Scott McWhirter <scott@surreytech.co.uk> contributed verbose error messages for
+file locking.
+
+Corris Randall <corris@line6.net> gave us the option to use any table name in
+the MySQL store.
+
+Oliver Maul <oliver.maul@ixos.de> updated the Sybase modules
+
+Innumerable users sent a patch for the reversed file age test in the file
+locking module.
+
+Langen Mike <mike.langen@tamedia.ch> contributed Informix modules.
+
 =cut
 
 package Apache::Session;
@@ -297,7 +312,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.54';
+$VERSION = '1.6';
 
 #State constants
 #

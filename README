@@ -1,21 +1,21 @@
 ---------------------------------------------------------------------------
 
-    11 October 2001                  Jeffrey W. Baker <jwbaker@acm.org>    
+    24 February 2004                  Jeffrey W. Baker <jwbaker@acm.org>    
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.54.
+This is Apache::Session 1.6
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
 abstracted to make all backing stores behave alike.  The programmer simply
 interacts with a tied hash.
 
-Apache::Session is Copyright(c) 1998, 1999, 2000, 2001 Jeffrey William Baker
-<jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
+Apache::Session is Copyright (c) 1998, 1999, 2000, 2001, 2004  Jeffrey William
+Baker <jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
 
 PREREQUISITES
 -------------
@@ -30,8 +30,8 @@ supported.
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-1.54.tar.gz
-cd Apache-Session-1.54
+tar -xvzf Apache-Session-1.6.tar.gz
+cd Apache-Session-1.6
 perl Makefile.PL
 make
 make test
@@ -85,6 +85,19 @@ storage-independent object interface with input from:
   Bavo De Ridder <bavo@ace.ulyssis.student.kuleuven.ac.be>
   Jules Bean <jmlb2@hermes.cam.ac.uk>
   Lincoln Stein <lstein@cshl.org>
+  
+Scott McWhirter <scott@surreytech.co.uk> contributed verbose error messages for
+file locking.
+
+Corris Randall <corris@line6.net> gave us the option to use any table name in
+the MySQL store.
+
+Oliver Maul <oliver.maul@ixos.de> updated the Sybase modules
+
+Innumerable users sent a patch for the reversed file age test in the file
+locking module.
+
+Mike Langen <mike.langen@tamedia.ch> contributed Informix modules.
 
 FURTHER INFORMATION:
 --------------------

@@ -2,7 +2,7 @@
 #
 # Apache::Session::Lock::File
 # flock(2) locking for Apache::Session
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -15,7 +15,7 @@ use Fcntl qw(:flock);
 use Symbol;
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 $Apache::Session::Lock::File::LockDirectory = '/tmp';
 
@@ -37,7 +37,7 @@ sub acquire_read_lock  {
         my $LockDirectory = $session->{args}->{LockDirectory} || 
             $Apache::Session::Lock::File::LockDirectory;
             
-        open($fh, "+>".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
+        open($fh, "+>".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die "Could not open file (".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock) for writing: $!";
 
         $self->{fh} = $fh;
         $self->{opened} = 1;
@@ -59,12 +59,12 @@ sub acquire_write_lock {
         my $LockDirectory = $session->{args}->{LockDirectory} || 
             $Apache::Session::Lock::File::LockDirectory;
             
-        open($fh, "+>".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
+        open($fh, "+>".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die "Could not open file (".$LockDirectory."/Apache-Session-".$session->{data}->{_session_id}.".lock) for writing: $!";
 
         $self->{fh} = $fh;
         $self->{opened} = 1;
     }
-        
+    
     flock($self->{fh}, LOCK_EX);    
     $self->{write} = 1;
 }
@@ -133,7 +133,7 @@ sub clean {
     my @files = readdir(DIR);
     foreach my $file (@files) {
         if ($file =~ /^Apache-Session.*\.lock$/) {
-            if ((stat($dir.'/'.$file))[8] - $now >= $time) {
+            if ($now - (stat($dir.'/'.$file))[8] >= $time) {
                 open(FH, "+>$dir/".$file) || next;
                 flock(FH, LOCK_EX) || next;
                 unlink($dir.'/'.$file) || next;

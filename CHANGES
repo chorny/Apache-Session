@@ -1,3 +1,16 @@
+Changes in 1.6:
+
+Fixed file age test for clean().  The previous test was never true.
+
+Applied patch to add TableName option to the DBI/MySQL store.  
+From Corris Randall <corris@line6.net>.  Tests added by jwb.
+
+Applied patch from Oliver Maul <oliver.maul@ixos.de> for better Sybase support,
+without tests.
+
+Informix support from Mike Langen <mike.langen@tamedia.ch>.  Unfortunately no
+tests were included.
+
 Changes in 1.54:
 
 Added mod_uniqueid and mod_usertrack generators from 

@@ -2,7 +2,7 @@
 #
 # Apache::Session::Store::File
 # Implements session object storage via flat files
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -14,7 +14,7 @@ use Symbol;
 use Fcntl;
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 $Apache::Session::Store::File::Directory = '/tmp';
 
@@ -39,7 +39,7 @@ sub insert {
     }
     
     sysopen ($self->{fh}, $directory.'/'.$session->{data}->{_session_id}, O_RDWR|O_CREAT) ||
-        die "Could not open file: $!";
+        die "Could not open file ".$directory.'/'.$session->{data}->{_session_id}.": $!";
 
     $self->{opened} = 1;
     

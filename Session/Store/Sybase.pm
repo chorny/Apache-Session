@@ -3,10 +3,13 @@
 # Apache::Session::Store::Sybase
 # Apache persistent user sessions in a DBI::Sybase database
 #
-# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 2000, 2004 Jeffrey William Baker (jwbaker@acm.org), Mark Landry (mdlandry@lincoln.midcoast.com), and Chris Winters (chris@cwinters.com)
+#
 # With modifications from earlier version of Apache::Session::DBI::Sybase
 #   from Mark Landry (mdlandry@lincoln.midcoast.com)
+# 
 # Modified to work with Apache::Session v 1.5+ by Chris Winters (chris@cwinters.com)
+#
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -19,7 +22,7 @@ use vars qw( @ISA $VERSION );
 use Apache::Session::Store::DBI;
 
 @ISA     = qw( Apache::Session::Store::DBI );
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 $Apache::Session::Store::Sybase::DataSource = undef;
 $Apache::Session::Store::Sybase::UserName   = undef;
@@ -102,9 +105,9 @@ sub insert {
     local $self->{dbh}->{RaiseError} = 1;
 
 	my $sth = $self->{dbh}->prepare( qq{ 
-                 INSERT INTO sessions (id, a_session) VALUES ( ?, $session->{serialized} ) } );
+                 INSERT INTO sessions (id, a_session) VALUES ( }.$self->{dbh}->quote($session->{data}->{_session_id}).qq{, }.$self->{dbh}->quote($session->{serialized}).qq{ ) } );
 
-    $sth->execute( $session->{data}->{_session_id} );
+    $sth->execute( );
 }
 
 
@@ -117,9 +120,51 @@ sub update {
     local $self->{dbh}->{RaiseError} = 1;
 
 	my $sth = $self->{dbh}->prepare( qq{ 
-                 UPDATE sessions SET a_session = $session->{serialized} WHERE id = ? } );
+                 UPDATE sessions SET a_session = }.$self->{dbh}->quote($session->{serialized}).qq{ WHERE id = }.$self->{dbh}->quote($session->{data}->{_session_id}) );
 
-    $sth->execute( $session->{data}->{_session_id} );
+    $sth->execute( );
+}
+
+sub materialize {
+    my $self    = shift;
+    my $session = shift;
+
+    $self->connection($session);
+
+    local $self->{dbh}->{RaiseError} = 1;
+
+    $self->{materialize_sth} =
+            $self->{dbh}->prepare(qq{
+                SELECT a_session FROM sessions WHERE id = }.$self->{dbh}->quote(
+$session->{data}->{_session_id}));
+
+    $self->{materialize_sth}->execute;
+
+    my $results = $self->{materialize_sth}->fetchrow_arrayref;
+
+    if (!(defined $results)) {
+        die "Object does not exist in the data store";
+    }
+
+    $self->{materialize_sth}->finish;
+
+    $session->{serialized} = $results->[0];
+}
+
+sub remove {
+    my $self    = shift;
+    my $session = shift;
+
+    $self->connection($session);
+
+    local $self->{dbh}->{RaiseError} = 1;
+
+    $self->{remove_sth} =
+            $self->{dbh}->prepare_cached(qq{
+                DELETE FROM sessions WHERE id = }.$self->{dbh}->quote($session->{data}->{_session_id}));
+
+    $self->{remove_sth}->execute;
+    $self->{remove_sth}->finish;
 }
 
 sub DESTROY {
@@ -171,7 +216,7 @@ sqsh programs:
 
  CREATE TABLE sessions (
     id         CHAR(32) not null primary key,
-    a_session  IMAGE
+    a_session  TEXT
  )
  go
 
