@@ -13,7 +13,7 @@ Apache::Session - A persistence framework for session data
 
 =head1 SYNOPSIS
 
-  use Apache::Session::DBI;
+  use Apache::Session::MySQL;
   
   my %session;
   
@@ -28,7 +28,7 @@ Apache::Session - A persistence framework for session data
   
   #...time passes...
   
-  #get the session data back out again
+  #get the session data back out again during some other request
   my %session;
   tie %session, 'Apache::Session::MySQL', $id;
   
@@ -207,7 +207,7 @@ is a rather religious topic among Apache users.  This example uses cookies.
 The implementation of a path info system is left as an exercise for the
 reader.
 
- use Apache::Session::DBI;
+ use Apache::Session::MySQL;
  use Apache;
 
  use strict;
@@ -251,6 +251,10 @@ Lincoln Stein, has a chapter on keeping state.
 Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
 
+Chris Winters <cwinters@intes.net> contributed the Sybase code.
+
+Michael Schout <mschout@gkg.net> fixed a commit policy bug in 1.51.
+
 Andreas J. Koenig <andreas.koenig@anima.de> contributed valuable CPAN
 advice and also Apache::Session::Tree and Apache::Session::Counted.
 
@@ -281,7 +285,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.51';
+$VERSION = '1.52';
 
 #State constants
 #
@@ -360,7 +364,7 @@ sub TIEHASH {
     #If a session ID was passed in, this is an old hash.
     #If not, it is a fresh one.
 
-    if (defined $session_id) {
+    if (defined $session_id  && $session_id) {
         if (exists $args->{Transaction} && $args->{Transaction}) {
             $self->acquire_write_lock;
         }

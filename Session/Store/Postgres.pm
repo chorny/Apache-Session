@@ -17,7 +17,7 @@ use Apache::Session::Store::DBI;
 use vars qw(@ISA $VERSION);
 
 @ISA = qw(Apache::Session::Store::DBI);
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 $Apache::Session::Store::Postgres::DataSource = undef;
 $Apache::Session::Store::Postgres::UserName   = undef;
@@ -31,6 +31,7 @@ sub connection {
 
     if (exists $session->{args}->{Handle}) {
         $self->{dbh} = $session->{args}->{Handle};
+        $self->{commit} = $session->{args}->{Commit};
         return;
     }
 
@@ -172,6 +173,8 @@ Instead, you may pass in an already-opened DBI handle to your database.
 =head1 AUTHOR
 
 This modules was written by Jeffrey William Baker <jwbaker@acm.org>
+
+A fix for the commit policy was contributed by Michael Schout <mschout@gkg.net>
 
 =head1 SEE ALSO
 

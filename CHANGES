@@ -1,3 +1,27 @@
+Changes in 1.52:
+
+Chris Winters <cwinters@intes.net> added the Sybase backing store and 
+related modules.  
+
+Michael Schout <mschout@gkg.net> fixed a commit policy bug in 1.51.
+
+Edward Lopez <zed@apricot.com> fixed a thinko in the POD.
+
+Peter Baker <Peter@eBluegrass.com> fixed a typo in the POD.
+
+Andrew Wild <andrew@eservers.com.au> fixed a typo in the POD.
+
+Alan Sparks <asparks@cpd.harris.com> fixed a type in the POD.
+
+Jay Lawrence <jlawrenc@infonium.com> changed the interface so that an undefined
+or false variable indicates a fresh session.  Previously, only undefined was
+considered new.
+
+Lupe Christoph <lupe@lupe-christoph.de> noticed that there was a buffer
+race condition in the file store, which is now fixed.
+
+
+
 Changes in 1.51:
 
 Added the Oracle backing store.

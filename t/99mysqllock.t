@@ -12,7 +12,7 @@ print "1..3\n";
 my $s = {
     args => {
         LockDataSource => 'dbi:mysql:test',
-        LockUsername   => 'test',
+        LockUserName   => 'test',
         LockPassword   => ''
     },
     data => {

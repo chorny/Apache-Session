@@ -12,7 +12,7 @@ package Apache::Session::File;
 use strict;
 use vars qw(@ISA $VERSION);
 
-$VERSION = '1.50';
+$VERSION = '1.52';
 @ISA = qw(Apache::Session);
 
 use Apache::Session;
@@ -33,6 +33,14 @@ sub populate {
     return $self;
 }
 
+sub DESTROY {
+    my $self = shift;
+    
+    $self->save;
+    $self->close;
+    $self->release_all_locks;
+}
+
 1;
 
 
@@ -48,7 +56,7 @@ Apache::Session::File - An implementation of Apache::Session
  
  tie %hash, 'Apache::Session::File', $id, {
     Directory => '/tmp/sessions',
-    LockDir   => '/var/lock/sessions',
+    LockDirectory   => '/var/lock/sessions',
  };
 
 =head1 DESCRIPTION

@@ -17,6 +17,7 @@ Session/Oracle.pm
 Session/Postgres.pm
 Session/Serialize/Base64.pm
 Session/Serialize/Storable.pm
+Session/Serialize/Sybase.pm
 Session/Serialize/UUEncode.pm
 Session/Store/DBI.pm
 Session/Store/DB_File.pm
@@ -24,6 +25,8 @@ Session/Store/File.pm
 Session/Store/MySQL.pm
 Session/Store/Oracle.pm
 Session/Store/Postgres.pm
+Session/Store/Sybase.pm
+Session/Sybase.pm
 TODO
 b/dbi.b
 b/dbinew.b

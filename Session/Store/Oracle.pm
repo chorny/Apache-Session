@@ -17,7 +17,7 @@ use Apache::Session::Store::DBI;
 use vars qw(@ISA $VERSION);
 
 @ISA = qw(Apache::Session::Store::DBI);
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 $Apache::Session::Store::Oracle::DataSource = undef;
 $Apache::Session::Store::Oracle::UserName   = undef;
@@ -31,6 +31,7 @@ sub connection {
 
     if (exists $session->{args}->{Handle}) {
         $self->{dbh} = $session->{args}->{Handle};
+        $self->{commit} = $session->{args}->{Commit};
         return;
     }
 
@@ -166,6 +167,8 @@ object.  If not supplied, the default maximum size is 8 KB.
 =head1 AUTHOR
 
 This modules was written by Jeffrey William Baker <jwbaker@acm.org>
+
+A fix for the commit policy was contributed by Michael Schout <mschout@gkg.net>
 
 =head1 SEE ALSO
 

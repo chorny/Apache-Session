@@ -1,13 +1,13 @@
 ---------------------------------------------------------------------------
 
-    26 May 2000                          Jeffrey Baker <jwbaker@acm.org>
+    23 July 2000                         Jeffrey Baker <jwbaker@acm.org>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.50.
+This is Apache::Session 1.52.
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
@@ -31,8 +31,8 @@ supported.
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-1.50.tar.gz
-cd Apache-Session-1.50
+tar -xvzf Apache-Session-1.52.tar.gz
+cd Apache-Session-1.52
 perl Makefile.PL
 make
 make test
@@ -49,6 +49,10 @@ AUTHORS
 -------
 Jeffrey William Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
+
+Chris Winters <cwinters@intes.net> contributed the Sybase code.
+
+Michael Schout <mschout@gkg.net> fixed a commit policy bug in 1.51.
 
 Andreas J. Koenig <andreas.koenig@anima.de> contributed valuable CPAN
 advice and also Apache::Session::Tree and Apache::Session::Counted.

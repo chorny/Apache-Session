@@ -14,7 +14,7 @@ use Symbol;
 use Fcntl;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 $Apache::Session::Store::File::Directory = '/tmp';
 
@@ -98,7 +98,7 @@ sub remove {
     my $directory = $session->{args}->{Directory} || $Apache::Session::Store::File::Directory;
 
     if ($self->{opened}) {
-        close $self->{fh};
+        CORE::close $self->{fh};
         $self->{opened} = 0;
     }
 
@@ -111,11 +111,20 @@ sub remove {
     }
 }
 
+sub close {
+    my $self = shift;
+    
+    if ($self->{opened}) {
+        CORE::close $self->{fh};
+        $self->{opened} = 0;
+    }
+}
+
 sub DESTROY {
     my $self = shift;
     
     if ($self->{opened}) {    
-        close $self->{fh};
+        CORE::close $self->{fh};
     }
 }
 
