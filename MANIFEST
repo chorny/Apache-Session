@@ -6,8 +6,11 @@ Session.pm
 Session/DBI.pm
 Session/DBIStore.pm
 Session/File.pm
+Session/FileStore.pm
+Session/MemoryStore.pm
 Session/NullLocker.pm
 Session/PosixFileLocker.pm
-Session/FileStore.pm
+Session/SingleThread.pm
+Session/SysVSemaphoreLocker.pm
 eg/example.perl
 t/00basic.t

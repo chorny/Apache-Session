@@ -1,19 +1,17 @@
 ---------------------------------------------------------------------------
 
-    14 February 1999        Jeffrey Baker <jeffrey@kathyandjeffrey.net>
+    15 February 1999        Jeffrey Baker <jeffrey@kathyandjeffrey.net>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 0.99.3, a pre-release of 1.0.  There is almost
+This is Apache::Session 0.99.5, a pre-release of 1.0.  There is almost
 no documentation for this pre-release.  Sorry!  Here is the release schedule
 for 1.0:
 
-0.99.4: Network locking
-0.99.5: Single-threaded memory storage (for Win32)
-0.99.6: IPC shared memory storage (not using IPC::Shareable)
+0.99.6: Network locking
 0.99.7: Documentation
 1.0: Bug squashing
 
@@ -40,8 +38,8 @@ writable filesystem (for lock files).
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-0.99.3.tar.gz
-cd Apache-Session-0.99.3
+tar -xvzf Apache-Session-0.99.5.tar.gz
+cd Apache-Session-0.99.5
 perl Makefile.PL
 make
 make test

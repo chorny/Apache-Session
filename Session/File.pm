@@ -15,7 +15,7 @@ use vars qw(@ISA);
 @ISA = qw(Apache::Session);
 
 use Apache::Session;
-use Apache::Session::NullLocker;
+use Apache::Session::SysVSemaphoreLocker;
 use Apache::Session::FileStore;
 
 sub get_object_store {
@@ -32,7 +32,7 @@ sub get_lock_manager {
     my $self = shift;
     
     if(!defined $self->{_lock_manager}) {
-        $self->{_lock_manager} = new Apache::Session::PosixFileLocker;
+        $self->{_lock_manager} = new Apache::Session::SysVSemaphoreLocker;
     }
     
     return $self->{_lock_manager}
