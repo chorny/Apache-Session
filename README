@@ -1,13 +1,13 @@
 ---------------------------------------------------------------------------
 
-    15 August 1999          Jeffrey Baker <jeffrey@kathyandjeffrey.net>
+    11 September 1999       Jeffrey Baker <jeffrey@kathyandjeffrey.net>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.0.
+This is Apache::Session 1.03.
 
 
 These modules are used to keep persistent user data across http requests.
@@ -21,7 +21,7 @@ Perl itself.
 PREREQUISITES
 -------------
 
-Build and install Perl (pref. 5.005_03), Apache (pref. 1.3.6) and mod_perl
+Build and install Perl (pref. 5.005_03), Apache (pref. 1.3.9) and mod_perl
 (pref. 1.21).  To use Apache::Session at all, you must have the MD5 and
 Storable modules available on CPAN (http://www.perl.com/CPAN).
 
@@ -31,8 +31,8 @@ DBD for your database.
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-1.0.tar.gz
-cd Apache-Session-1.0
+tar -xvzf Apache-Session-1.03.tar.gz
+cd Apache-Session-1.03
 perl Makefile.PL
 make
 make test
@@ -55,7 +55,7 @@ advice and also Apache::Session::Tree and Apache::Session::Counted.
 
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
 and provided the initial code for it.  He also uses Apache::Session in
-his Embperl module.
+his Embperl module and is the author of Apache::Session::Embperl.
 
 Jochen Wiedmann <joe@ipsoft.de> contributed patches for bugs and
 improved performance.

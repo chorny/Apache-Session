@@ -261,7 +261,7 @@ advice and also Apache::Session::Tree and Apache::Session::Counted.
 
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
 and provided the initial code for it.  He also uses Apache::Session in
-his Embperl module.
+his Embperl module and is the author of Apache::Session::Embperl
 
 Jochen Wiedmann <joe@ipsoft.de> contributed patches for bugs and
 improved performance.
@@ -286,7 +286,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.03';
 
 use MD5; #yes, you need MD5.pm
 
