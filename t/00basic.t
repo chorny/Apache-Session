@@ -1,7 +1,10 @@
-print "1..2\n";
+print "1..3\n";
 
 require MD5;
 print "ok 1\n";
 
-require Apache::Session;
+require Storable;
 print "ok 2\n";
+
+require Apache::Session;
+print "ok 3\n";

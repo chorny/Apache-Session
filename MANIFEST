@@ -3,13 +3,8 @@ MANIFEST
 Makefile.PL
 README
 Session.pm
-Session/DBI.pm
-Session/Daemon.pm
 Session/File.pm
-Session/IPC.pm
-Session/Win32.pm
+Session/NullLocker.pm
+Session/FileStore.pm
 eg/example.perl
-sessiond.pl
 t/00basic.t
-t/ipc.t
-t/file.t

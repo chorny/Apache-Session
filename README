@@ -1,47 +1,45 @@
 ---------------------------------------------------------------------------
 
-     15 September 1998           Jeffrey Baker <jeff@godzilla.tamu.edu>
+     28 January 1999        Jeffrey Baker <jeffrey@kathyandjeffrey.net>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 0.16.
+This is Apache::Session 0.99.0, a pre-release of 1.0.  There is almost
+no documentation for this pre-release.  Sorry!  Here is the release schedule
+for 1.0:
+
+0.99.1: DBI storage
+0.99.2: Network locking
+0.99.3: Posix file Locking
+0.99.4: Mutex or shared memory locking
+0.99.5: Single-threaded memory storage (for Win32)
+0.99.6: IPC shared memory storage (not using IPC::Shareable)
+1.0: Bug squashing
 
 These modules are used to keep persistent user data across http requests.
 Apache::Session was designed for use with Apache and mod_perl.
 
-Four storage systems are defined: DBI-compliant database, Win32 shared 
-memory, IPC shared memory, and flat files.  
-
-Apache::Session is Copyright(c) 1998 Jeffrey William Baker
-<jeff@godzilla.tamu.edu>.  Distribute under the Artistic License.
+Apache::Session is Copyright(c) 1998, 1999 Jeffrey William Baker
+<jeffrey@kathyandjeffrey.net>.  Distribute under the Artistic License.
 
 PREREQUISITES
 -------------
 
-Build and install Perl (pref. 5.004_04), Apache (pref. 1.3.0) and mod_perl
-(pref. 1.15).  To use Apache::Session at all, you must have the MD5 module,
+Build and install Perl (pref. 5.005_02), Apache (pref. 1.3.4) and mod_perl
+(pref. 1.18).  To use Apache::Session at all, you must have the MD5 module,
 available on CPAN (http://www.perl.com/CPAN).
 
-Apache::Session::DBI needs DBI and at least one DBD, plus FreezeThaw, 
-available on CPAN.
-
-Apache::Session::Win32 requires that you be using a Win32 operating system
-(e.g. Windows NT).
-
-Apache::Session::IPC requires the IPC::Shareable module and a SysV IPC
-compliant operating system.
-
-Apache::Session::File requires the Storable module and a writeable file-
+Apache::Session::FileStore requires the Storable module and a writeable file-
 system.
 
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-0.15.tar.gz
-cd Apache-Session-0.15
+tar -xvzf Apache-Session-0.99.0.tar.gz
+cd Apache-Session-0.99.0
 perl Makefile.PL
 make
 make test
@@ -49,57 +47,25 @@ make install
 
 Substitute "nmake" for "make" above if you are using Windows.
 
-Consult the pod for the storage mechanism that you plan on using.
-
-This version of Apache::Session::DBI is not backward compatible
-with the table structure from version 0.14.  Please see perldoc
-Apache::Session::DBI.
-
 EXAMPLE
 -------
 
-use Apache;
-use Apache::Constants;
-use Apache::Session::Win32;
-
-my $r = Apache->request();
-$r->content_type("text/html");
-$r->status(200);
-$r->send_http_header;
-
-my $session_id = $r->path_info(); # storing session id in the URL
-$session_id =~ s/^\///;
-
-my $session = Apache::Session::Win32->open(
-                $session_id, { autocommit => 0, 
-                               lifetime   => 3600 }
-                                          ) ||
-                                          
-              Apache::Session::Win32->new(
-                             { autocommit => 0,
-                               lifetime   => 3600 }
-                                         );
-
-$session_id = $session->{'_ID'};
-$session->{'username'} = {'John Doe'};
-$session->store();
-
-print "Your name is ".$session->{'username'};
+Install eg/example.perl under your document root and run it.
 
 AUTHORS
 -------
 
 Jeffrey Baker is the author of Apache::Session.
 
-Gerald Richter <richter@ecos.de> wrote the tied hash interface and
-kickstarted the test suite.
+Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
+and provded the initial code for it.  He also uses Apache::Session in
+his Embperl module.
 
 Jochen Wiedeman <joe@ipsoft.de> contributed patches for bugs and
 improved performance.
 
-Randy Harmon <rjharmon@uptimecomputers.com> created storage independence
-through subclassing, with useful comments, suggestions, and source code
-from:
+Randy Harmon <rjharmon@uptimecomputers.com> contributed the original
+storage-independent object interface with input from:
 
   Bavo De Ridder <bavo@ace.ulyssis.student.kuleuven.ac.be>
   Jules Bean <jmlb2@hermes.cam.ac.uk>
@@ -108,9 +74,6 @@ from:
 Doug MacEachern wrote mod_perl.
 
 Larry Wall wrote perl.
-
-This README format is shamelessly stolen from Edmund Mergl 
-<E.Mergl@bawue.de>
 
 
 FURTHER INFORMATION:

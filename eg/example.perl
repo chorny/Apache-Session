@@ -1,54 +1,51 @@
 ######################################################################
 #
 # Consult the documentation before trying to run this file.
-# You need to set the environment variable SESSION_FILE_DIRECTORY
+# You need a /tmp directory or you need to change the Directory option!
 # This file also assumes PerlSendHeader Off
 #
 ######################################################################
 
 use strict;
 use Apache;
-use Apache::Constants;
+use CGI;
 use Apache::Session::File;
 
 my $r = Apache->request();
 
-$r->status(OK);
+$r->status(200);
 $r->content_type("text/html");
 $r->send_http_header;
 
 my $session_id = $r->path_info();
 $session_id =~ s/^\///;
 
-my $opts = { autocommit => 1, lifetime => 600 };
+$session_id = $session_id ? $session_id : undef;
 
-my $session = Apache::Session::File->open($session_id, $opts)||
-              Apache::Session::File->new($opts);
+my %session;
+my $opts = { Directory => '/tmp' };
 
-die "No session" unless $session;
+tie %session, 'Apache::Session::File', $session_id, $opts;
 
 my $input = CGI::param('input');
-$session->{'name'} = $input if $input;
-
-my $link = $session->rewrite();
+$session{name} = $input if $input;
 
 print<<__EOS__;
 
 Hello<br>
-Session ID number is: $session->{'_ID'}<br>
+Session ID number is: $session{_session_id}<br>
 The Session ID is embedded in the URL<br>
 <br>
 Your input to the form was: $input<br>
-Your name is $session->{'name'}<br>
+Your name is $session{name}<br>
 
-<form action="$link" method="post">
+<br>
+<a href="http://localhost/example.perl/$session{_session_id}">Reload this session</a><br>
+<a href="http://localhost/example.perl">New session</a>
+
+<form action="http://localhost/example.perl/$session{_session_id}" method="post">
   Type in your name here:
   <input name="input">
   <input type="submit" value="Go!">
 </form>
 __EOS__
-
-print "<hr>These are the contents of the session hash:\n";
-print $session->dump_to_html();
-
-$session->store(); # You should store() regardless of autocommit
