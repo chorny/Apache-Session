@@ -17,7 +17,7 @@ use Apache::Session::Store::DBI;
 use vars qw(@ISA $VERSION);
 
 @ISA = qw(Apache::Session::Store::DBI);
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 $Apache::Session::Store::MySQL::DataSource = undef;
 $Apache::Session::Store::MySQL::UserName   = undef;
@@ -72,9 +72,9 @@ Apache::Session::Store::MySQL - Store persistent data in a MySQL database
 
 =head1 SYNOPSIS
 
- use Apache::Session::Store::File;
+ use Apache::Session::Store::MySQL;
  
- my $store = new Apache::Session::Store::File;
+ my $store = new Apache::Session::Store::MySQL;
  
  $store->insert($ref);
  $store->update($ref);

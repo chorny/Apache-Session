@@ -13,6 +13,7 @@ Session/Lock/MySQL.pm
 Session/Lock/Null.pm
 Session/Lock/Semaphore.pm
 Session/MySQL.pm
+Session/Oracle.pm
 Session/Postgres.pm
 Session/Serialize/Base64.pm
 Session/Serialize/Storable.pm
@@ -21,6 +22,7 @@ Session/Store/DBI.pm
 Session/Store/DB_File.pm
 Session/Store/File.pm
 Session/Store/MySQL.pm
+Session/Store/Oracle.pm
 Session/Store/Postgres.pm
 TODO
 b/dbi.b
@@ -44,6 +46,7 @@ t/99mysql.t
 t/99mysqllock.t
 t/99mysqlstore.t
 t/99nulllock.t
+t/99oracle.t
 t/99postgres.t
 t/99semaphore.t
 t/99storable.t

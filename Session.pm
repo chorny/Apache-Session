@@ -49,11 +49,12 @@ altogether.
 Apache::Session consists of five components: the interface, the object store,
 the lock manager, the ID generator, and the serializer.  The interface is
 defined in Session.pm, which is meant to be easily subclassed.  The object
-store can be the filesystem, a Berkeley DB, a MySQL DB, or a Postgres DB.
-Locking is done by lock files, semaphores, or the locking capabilities of MySQL
-and Postgres.  Serialization is done via Storable, and optionally  ASCII-fied
-via MIME or pack().  ID numbers are generated via MD5.  The reader is
-encouraged to extend these capabilities to meet his own requirements.
+store can be the filesystem, a Berkeley DB, a MySQL DB, an Oracle DB, or a
+Postgres DB. Locking is done by lock files, semaphores, or the locking
+capabilities of MySQL and Postgres.  Serialization is done via Storable, and
+optionally  ASCII-fied via MIME or pack().  ID numbers are generated via MD5. 
+The reader is encouraged to extend these capabilities to meet his own
+requirements.
 
 A derived class of Apache::Session is used to tie together the three
 components.  The derived class inherits the interface from Apache::Session, and
@@ -280,7 +281,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.50';
+$VERSION = '1.51';
 
 #State constants
 #

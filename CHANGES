@@ -1,3 +1,11 @@
+Changes in 1.51:
+
+Added the Oracle backing store.
+
+
+
+Changes in 1.50:
+
 If you are upgrading from a previous version of Apache::Session, please note
 these changes:
 

@@ -2,7 +2,7 @@
 #
 # Apache::Session::Store::DBI
 # A base class for the MySQL, Postgres, and other DBI stores
-# Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
+# Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
 # Distribute under the Artistic License
 #
 ############################################################################
@@ -14,7 +14,7 @@ use DBI;
 
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub new {
     my $class = shift;
