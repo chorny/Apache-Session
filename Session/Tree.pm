@@ -1,13 +1,10 @@
 #############################################################################
 #
-# Apache::Session::File
-# Apache persistent user sessions in the filesystem
-# Copyright(c) 1998, 1999 Jeffrey William Baker (jeffrey@kathyandjeffrey.net)
-# Distribute under the Artistic License
+# This module was written by Andreas Koenig <andreas.koenig@anima.de>
 #
 ############################################################################
 
-package Apache::Session::File;
+package Apache::Session::Tree;
 
 use strict;
 use vars qw(@ISA $VERSION);
@@ -17,17 +14,17 @@ $VERSION = '1.00';
 
 use Apache::Session;
 use Apache::Session::SysVSemaphoreLocker;
-use Apache::Session::FileStore;
+use Apache::Session::TreeStore;
 
 sub get_object_store {
     my $self = shift;
 
-    return new Apache::Session::FileStore $self;
+    return new Apache::Session::TreeStore $self;
 }
 
 sub get_lock_manager {
     my $self = shift;
-    
+
     return new Apache::Session::SysVSemaphoreLocker $self;
 }
 

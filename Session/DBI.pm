@@ -11,17 +11,13 @@
 
 Apache::Session::DBI - Session persistence via DBI
 
-=head1 SCHEMA
+=head1 SYNOPSIS
 
-To use this module, you will need these columns in a table 
-called 'sessions':
+=head1 DESCRIPTION
 
- id char(16)
- length int(11)
- a_session text
-
-Where the a_session column needs to be able to handle arbitrarily
-long binary data.
+Apache::Session::DBI is wrapper for the Apache::Session::DBIStore and
+Apache::Session::PosixFileLocker modules.  Please consult the documentation
+for those modules.
 
 =cut
 
@@ -29,8 +25,9 @@ long binary data.
 package Apache::Session::DBI;
 
 use strict;
-use vars qw(@ISA);
+use vars qw(@ISA $VERSION);
 
+$VERSION = '1.00';
 @ISA = qw(Apache::Session);
 
 use Apache::Session;

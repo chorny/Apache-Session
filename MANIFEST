@@ -3,12 +3,15 @@ MANIFEST
 Makefile.PL
 README
 Session.pm
+Session/Counted.pm
 Session/DaemonLocker.pm
 Session/DBI.pm
 Session/DBIStore.pm
 Session/File.pm
 Session/FileStore.pm
 Session/MemoryStore.pm
+Session/Tree.pm
+Session/TreeStore.pm
 Session/NullLocker.pm
 Session/PosixFileLocker.pm
 Session/SingleThread.pm

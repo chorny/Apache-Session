@@ -12,8 +12,11 @@ package Apache::Session::SysVSemaphoreLocker;
 use strict;
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
+use vars qw($VERSION);
 
-$Apache::Session::SysVSemaphoreLocker::nsems = 32; #good for linux, bad for solaris
+$VERSION = '1.00';
+
+$Apache::Session::SysVSemaphoreLocker::nsems = 32; #on Solaris 2.6, try 8 or 16
 $Apache::Session::SysVSemaphoreLocker::sem_key = 31818;
 
 sub new {

@@ -10,6 +10,9 @@
 package Apache::Session::NullLocker;
 
 use strict;
+use vars qw($VERSION);
+
+$VERSION = '1.00';
 
 #This package is fake.  It fulfills the API that Apache::Session
 #outlines but doesn't actually do anything, least of all provide

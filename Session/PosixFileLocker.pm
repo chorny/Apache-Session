@@ -9,15 +9,15 @@
 
 package Apache::Session::PosixFileLocker;
 
-#This is the best locker so far.  If session A is writing, session B will not
-#block.  Hooray.
-
 use strict;
 
 use Fcntl qw(:flock);
 use Symbol;
+use vars qw($VERSION);
 
-$Apache::Session::PosixFileLocker::lockdir = '/tmp';
+$VERSION = '1.00';
+
+$Apache::Session::PosixFileLocker::LockDir = '/tmp';
 
 sub new {
     my $class = shift;
@@ -35,9 +35,9 @@ sub acquire_read_lock  {
         my $fh = Symbol::gensym();
         
         my $lockdir = $session->{args}->{LockDir} || 
-            $Apache::Session::PosixFileLocker::lockdir;
+            $Apache::Session::PosixFileLocker::LockDir;
             
-        open($fh, ">".$lockdir."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
+        open($fh, "+>".$lockdir."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
 
         $self->{fh} = $fh;
         $self->{opened} = 1;
@@ -57,9 +57,9 @@ sub acquire_write_lock {
         my $fh = Symbol::gensym();
         
         my $lockdir = $session->{args}->{LockDir} || 
-            $Apache::Session::PosixFileLocker::lockdir;
+            $Apache::Session::PosixFileLocker::LockDir;
             
-        open($fh, ">".$lockdir."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
+        open($fh, "+>".$lockdir."/Apache-Session-".$session->{data}->{_session_id}.".lock") || die $!;
 
         $self->{fh} = $fh;
         $self->{opened} = 1;
@@ -76,8 +76,8 @@ sub release_read_lock  {
     die unless $self->{read};
     
     if (!$self->{write}) {
-        close $self->{fh};
-        
+        flock($self->{fh}, LOCK_UN);
+        close $self->{fh} || die $!;
         $self->{opened} = 0;
     }
     
@@ -94,29 +94,33 @@ sub release_write_lock {
         flock($self->{fh}, LOCK_SH);
     }
     else {
-        close $self->{fh};
-        
+        flock($self->{fh}, LOCK_UN);
+        close $self->{fh} || die $!;
         $self->{opened} = 0;
     }
     
     $self->{write} = 0;
 }
+
 sub release_all_locks  {
     my $self    = shift;
     my $session = shift;
 
+    flock($self->{fh}, LOCK_UN);
+
     if ($self->{opened}) {
-        close $self->{fh} || die;
-
-        my $lockdir = $session->{args}->{LockDir} || 
-            $Apache::Session::PosixFileLocker::lockdir;
-
-        unlink $lockdir."/Apache-Session-".$session->{data}->{_session_id}.".lock" || die $!;
+        close $self->{fh} || die $!;
     }
     
     $self->{opened} = 0;
     $self->{read}   = 0;
     $self->{write}  = 0;
+}
+
+sub DESTROY {
+    my $self = shift;
+    
+    $self->release_all_locks;
 }
 
 1;

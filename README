@@ -1,16 +1,14 @@
 ---------------------------------------------------------------------------
 
-    3 March 1999            Jeffrey Baker <jeffrey@kathyandjeffrey.net>
+    15 August 1999          Jeffrey Baker <jeffrey@kathyandjeffrey.net>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 0.99.7, a pre-release of 1.0.  Here is the release schedule for 1.0:
+This is Apache::Session 1.0.
 
-0.99.8: Network locking, more documentation
-1.0: Bug squashing
 
 These modules are used to keep persistent user data across http requests.
 Apache::Session was designed for use with Apache and mod_perl, but works
@@ -23,18 +21,18 @@ Perl itself.
 PREREQUISITES
 -------------
 
-Build and install Perl (pref. 5.005_02), Apache (pref. 1.3.4) and mod_perl
-(pref. 1.18).  To use Apache::Session at all, you must have the MD5 and
+Build and install Perl (pref. 5.005_03), Apache (pref. 1.3.6) and mod_perl
+(pref. 1.21).  To use Apache::Session at all, you must have the MD5 and
 Storable modules available on CPAN (http://www.perl.com/CPAN).
 
-If you wish to use the DBIStore modules, you will need DBI and the
+If you wish to use the DBIStore modules, you will need DBI (1.09+) and the
 DBD for your database.
 
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-0.99.7.tar.gz
-cd Apache-Session-0.99.7
+tar -xvzf Apache-Session-1.0.tar.gz
+cd Apache-Session-1.0
 perl Makefile.PL
 make
 make test
@@ -49,29 +47,24 @@ Install eg/example.perl under your document root and run it.
 
 AUTHORS
 -------
-
 Jeffrey Baker <jeffrey@kathyandjeffrey.net> is the author of 
 Apache::Session.
 
+Andreas J. Koenig <andreas.koenig@anima.de> contributed valuable CPAN
+advice and also Apache::Session::Tree and Apache::Session::Counted.
+
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
-and provded the initial code for it.  He also uses Apache::Session in
+and provided the initial code for it.  He also uses Apache::Session in
 his Embperl module.
 
-Jochen Wiedeman <joe@ipsoft.de> contributed patches for bugs and
+Jochen Wiedmann <joe@ipsoft.de> contributed patches for bugs and
 improved performance.
-
-Peter Kaas <Peter.Kaas@lunatech.com> sent quite a bit of feedback
-with ideas for interface improvements.
 
 Steve Shreeve <shreeve@uci.edu> squashed a bug in 0.99.0 whereby
 a cleared hash or deleted key failed to set the modified bit.
 
-John Tobey <jtobey@banta-im.com> suggested using insert-by-name
-in DBIStore.pm, and also improved performance by inlining Session.pm's
-constant subroutines.
-
-Jeff Beard <jeffb@mcguckin.com> pointed out that DBIStore.pm was
-ignoring run-time arguments.
+Peter Kaas <Peter.Kaas@lunatech.com> sent quite a bit of feedback
+with ideas for interface improvements.
 
 Randy Harmon <rjharmon@uptimecomputers.com> contributed the original
 storage-independent object interface with input from:
@@ -79,7 +72,6 @@ storage-independent object interface with input from:
   Bavo De Ridder <bavo@ace.ulyssis.student.kuleuven.ac.be>
   Jules Bean <jmlb2@hermes.cam.ac.uk>
   Lincoln Stein <lstein@cshl.org>
-
 
 FURTHER INFORMATION:
 --------------------

@@ -10,6 +10,9 @@
 package Apache::Session::MemoryStore;
 
 use strict;
+use vars qw($VERSION);
+
+$VERSION = '1.00';
 
 BEGIN {
     $Apache::Session::MemoryStore::store = {};

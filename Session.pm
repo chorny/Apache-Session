@@ -246,6 +246,7 @@ reader.
 Apache::Session::DBIStore, Apache::Session::FileStore, 
 Apache::Session::MemoryStore, Apache::Session::PosixFileLocker,
 Apache::Session::SysVSemaphoreLocker, Apache::Session::NullLocker
+Apache::Session::TreeStore, Apache::Session::Counted
 
 The O Reilly book "Apache Modules in Perl and C" has a chapter
 on keeping state.
@@ -255,18 +256,21 @@ on keeping state.
 Jeffrey Baker <jeffrey@kathyandjeffrey.net> is the author of 
 Apache::Session.
 
+Andreas J. Koenig <andreas.koenig@anima.de> contributed valuable CPAN
+advice and also Apache::Session::Tree and Apache::Session::Counted.
+
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
 and provided the initial code for it.  He also uses Apache::Session in
 his Embperl module.
 
-Jochen Wiedeman <joe@ipsoft.de> contributed patches for bugs and
+Jochen Wiedmann <joe@ipsoft.de> contributed patches for bugs and
 improved performance.
 
 Steve Shreeve <shreeve@uci.edu> squashed a bug in 0.99.0 whereby
 a cleared hash or deleted key failed to set the modified bit.
 
 Peter Kaas <Peter.Kaas@lunatech.com> sent quite a bit of feedback
-with ideas for interface improvements, and also a few bug fixes.
+with ideas for interface improvements.
 
 Randy Harmon <rjharmon@uptimecomputers.com> contributed the original
 storage-independent object interface with input from:
@@ -282,7 +286,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.99.8';
+$VERSION = '1.00';
 
 use MD5; #yes, you need MD5.pm
 
@@ -305,7 +309,8 @@ sub SYNCED   () {8};
 
 #State methods
 #
-#These methods tweak the state constants.
+#These methods aren't used anymore for performance reasons.  I'll
+#keep them around for reference
 
 
 
@@ -339,10 +344,6 @@ sub TIEHASH {
     my $session_id = shift;
     my $args       = shift || {};
 
-    #Make sure that the arguments to tie make sense
-        
-    $class->validate_id($session_id);
-    
     if(ref $args ne "HASH") {
         die "Additional arguments should be in the form of a hash reference";
     }
@@ -365,12 +366,12 @@ sub TIEHASH {
     #If not, it is a fresh one.
 
     if (defined $session_id) {
-        $self->make_old;
+        $self->{status} &= ($self->{status} ^ NEW);
         $self->restore;
     }
     else {
-        $self->make_new;
-        $self->{data}->{_session_id} = $class->generate_id();
+        $self->{status} |= NEW;
+        $self->{data}->{_session_id} = generate_id();
         $self->save;
     }
     
@@ -391,7 +392,7 @@ sub STORE {
     
     $self->{data}->{$key} = $value;
     
-    $self->make_modified;
+    $self->{status} |= MODIFIED;
     
     return $self->{data}->{$key};
 }
@@ -400,7 +401,7 @@ sub DELETE {
     my $self = shift;
     my $key  = shift;
     
-    $self->make_modified;
+    $self->{status} |= MODIFIED;
     
     delete $self->{data}->{$key};
 }
@@ -408,9 +409,9 @@ sub DELETE {
 sub CLEAR {
     my $self = shift;
 
-    $self->make_modified;
+    $self->{status} |= MODIFIED;
     
-    $self->{data} = { _session_id => $self->{data}->{_session_id} };
+    $self->{data} = {};
 }
 
 sub EXISTS {
@@ -450,8 +451,8 @@ sub DESTROY {
 sub restore {
     my $self = shift;
     
-    return if $self->is_synced;
-    return if $self->is_new;
+    return if ($self->{status} & SYNCED);
+    return if ($self->{status} & NEW);
     
     $self->acquire_read_lock;
 
@@ -461,14 +462,18 @@ sub restore {
     
     $self->{object_store}->materialize($self);
     
-    $self->make_unmodified;
-    $self->make_synced;
+    $self->{status} &= ($self->{status} ^ MODIFIED);
+    $self->{status} |= SYNCED
 }
 
 sub save {
     my $self = shift;
     
-    return unless ($self->is_modified || $self->is_new || $self->is_deleted);
+    return unless (
+        $self->{status} & MODIFIED || 
+        $self->{status} & NEW      || 
+        $self->{status} & DELETED
+    );
     
     $self->acquire_write_lock;
     
@@ -476,24 +481,24 @@ sub save {
         $self->{object_store} = $self->get_object_store;
     }
     
-    if ($self->is_deleted) {
+    if ($self->{status} & DELETED) {
         $self->{object_store}->remove($self);
-        $self->make_synced;
-        $self->make_unmodified;
-        $self->make_undeleted;
+        $self->{status} |= SYNCED;
+        $self->{status} &= ($self->{status} ^ MODIFIED);
+        $self->{status} &= ($self->{status} ^ DELETED);
         return;
     }
-    if ($self->is_modified) {
+    if ($self->{status} & MODIFIED) {
         $self->{object_store}->update($self);
-        $self->make_unmodified;
-        $self->make_synced;
+        $self->{status} &= ($self->{status} ^ MODIFIED);
+        $self->{status} |= SYNCED;
         return;
     }
-    if ($self->is_new) {
+    if ($self->{status} & NEW) {
         $self->{object_store}->insert($self);
-        $self->make_old;
-        $self->make_synced;
-        $self->make_unmodified;
+        $self->{status} &= ($self->{status} ^ NEW);
+        $self->{status} |= SYNCED;
+        $self->{status} &= ($self->{status} ^ MODIFIED);
         return;
     }
 }
@@ -501,9 +506,9 @@ sub save {
 sub delete {
     my $self = shift;
     
-    return if $self->is_new;
+    return if ($self->{status} & NEW);
     
-    $self->make_deleted;
+    $self->{status} |= DELETED;
     $self->save;
 }    
 
@@ -515,6 +520,10 @@ sub delete {
 
 sub READ_LOCK  () {1};
 sub WRITE_LOCK () {2};
+
+
+#These methods aren't used anymore for performance reasons.  I'll keep them
+#around for reference.
 
 sub has_read_lock    { $_[0]->{lock} & READ_LOCK }
 sub has_write_lock   { $_[0]->{lock} & WRITE_LOCK }
@@ -528,7 +537,7 @@ sub unset_write_lock { $_[0]->{lock} &= ($_[0]->{lock} ^ WRITE_LOCK) }
 sub acquire_read_lock  {
     my $self = shift;
 
-    return if $self->has_read_lock;
+    return if ($self->{lock} & READ_LOCK);
 
     if (!defined $self->{lock_manager}) {
         $self->{lock_manager} = $self->get_lock_manager;
@@ -536,13 +545,13 @@ sub acquire_read_lock  {
 
     $self->{lock_manager}->acquire_read_lock($self);
 
-    $self->set_read_lock;
+    $self->{lock} |= READ_LOCK;
 }
 
 sub acquire_write_lock {
     my $self = shift;
 
-    return if $self->has_write_lock;
+    return if ($self->{lock} & WRITE_LOCK);
 
     if (!defined $self->{lock_manager}) {
         $self->{lock_manager} = $self->get_lock_manager;
@@ -550,13 +559,13 @@ sub acquire_write_lock {
 
     $self->{lock_manager}->acquire_write_lock($self);
 
-    $self->set_write_lock;
+    $self->{lock} |= WRITE_LOCK;
 }
 
 sub release_read_lock {
     my $self = shift;
 
-    return unless $self->has_read_lock;
+    return unless ($self->{lock} & READ_LOCK);
 
     if (!defined $self->{lock_manager}) {
         $self->{lock_manager} = $self->get_lock_manager;
@@ -564,13 +573,13 @@ sub release_read_lock {
 
     $self->{lock_manager}->release_read_lock($self);
 
-    $self->unset_read_lock;
+    $self->{lock} &= ($self->{lock} ^ READ_LOCK);
 }
 
 sub release_write_lock {
     my $self = shift;
 
-    return unless $self->has_write_lock;
+    return unless ($self->{lock} & WRITE_LOCK);
 
     if (!defined $self->{lock_manager}) {
         $self->{lock_manager} = $self->get_lock_manager;
@@ -578,13 +587,13 @@ sub release_write_lock {
 
     $self->{lock_manager}->release_write_lock($self);
     
-    $self->unset_write_lock;
+    $self->{lock} &= ($self->{lock} ^ WRITE_LOCK);
 }
 
 sub release_all_locks {
     my $self = shift;
     
-    return unless ($self->has_read_lock || $self->has_write_lock);
+    return unless ($self->{lock} & READ_LOCK || $self->{lock} & WRITE_LOCK);
     
     if (!defined $self->{lock_manager}) {
         $self->{lock_manager} = $self->get_lock_manager;
@@ -592,8 +601,8 @@ sub release_all_locks {
 
     $self->{lock_manager}->release_all_locks($self);
 
-    $self->unset_read_lock;
-    $self->unset_write_lock;
+    $self->{lock} &= ($self->{lock} ^ READ_LOCK);
+    $self->{lock} &= ($self->{lock} ^ WRITE_LOCK);
 }        
 
 
@@ -606,12 +615,6 @@ sub release_all_locks {
 
 sub generate_id {
     return substr(MD5->hexhash(time(). {}. rand(). $$. 'blah'), 0, 16);
-}
-
-sub validate_id {
-    if(defined $_[1] && $_[1] =~ /[^a-f0-9]/) {
-        die "Garbled session id";
-    }
 }
 
 1;

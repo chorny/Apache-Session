@@ -11,6 +11,9 @@ package Apache::Session::FileStore;
 
 use strict;
 use Storable qw(nstore_fd retrieve_fd);
+use vars qw($VERSION);
+
+$VERSION = '1.00';
 
 $Apache::Session::FileStore::Directory = '/tmp';
 
