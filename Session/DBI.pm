@@ -1,13 +1,13 @@
 #############################################################################
 #
-# Apache::Session::File
-# Apache persistent user sessions in the filesystem
+# Apache::Session::DBI
+# Apache persistent user sessions in a DBI database
 # Copyright(c) 1998, 1999 Jeffrey William Baker (jeffrey@kathyandjeffrey.net)
 # Distribute under the Artistic License
 #
 ############################################################################
 
-package Apache::Session::File;
+package Apache::Session::DBI;
 
 use strict;
 use vars qw(@ISA);
@@ -15,14 +15,14 @@ use vars qw(@ISA);
 @ISA = qw(Apache::Session);
 
 use Apache::Session;
-use Apache::Session::NullLocker;
-use Apache::Session::FileStore;
+use Apache::Session::PosixFileLocker;
+use Apache::Session::DBIStore;
 
 sub get_object_store {
     my $self = shift;
 
     if(!defined $self->{_object_store}) {
-        $self->{_object_store} = new Apache::Session::FileStore;
+        $self->{_object_store} = new Apache::Session::DBIStore;
     }
     
     return $self->{_object_store}

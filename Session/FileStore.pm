@@ -12,6 +12,8 @@ package Apache::Session::FileStore;
 use strict;
 use Storable qw(nstore_fd retrieve_fd);
 
+$Apache::Session::FileStore::Directory = '/tmp';
+
 sub new {
     my $class = shift;
     

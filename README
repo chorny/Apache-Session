@@ -1,26 +1,25 @@
 ---------------------------------------------------------------------------
 
-     28 January 1999        Jeffrey Baker <jeffrey@kathyandjeffrey.net>
+    14 February 1999        Jeffrey Baker <jeffrey@kathyandjeffrey.net>
 
 ---------------------------------------------------------------------------
 
 DESCRIPTION
 -----------
 
-This is Apache::Session 0.99.0, a pre-release of 1.0.  There is almost
+This is Apache::Session 0.99.3, a pre-release of 1.0.  There is almost
 no documentation for this pre-release.  Sorry!  Here is the release schedule
 for 1.0:
 
-0.99.1: DBI storage
-0.99.2: Network locking
-0.99.3: Posix file Locking
-0.99.4: Mutex or shared memory locking
+0.99.4: Network locking
 0.99.5: Single-threaded memory storage (for Win32)
 0.99.6: IPC shared memory storage (not using IPC::Shareable)
+0.99.7: Documentation
 1.0: Bug squashing
 
 These modules are used to keep persistent user data across http requests.
-Apache::Session was designed for use with Apache and mod_perl.
+Apache::Session was designed for use with Apache and mod_perl, but works
+just as well under CGI and any other web server.
 
 Apache::Session is Copyright(c) 1998, 1999 Jeffrey William Baker
 <jeffrey@kathyandjeffrey.net>.  Distribute under the Artistic License.
@@ -35,11 +34,14 @@ available on CPAN (http://www.perl.com/CPAN).
 Apache::Session::FileStore requires the Storable module and a writeable file-
 system.
 
+Apache::Session::DBI requires Storable, DBI, a working DBD, and a 
+writable filesystem (for lock files).
+
 INSTALLATION
 ------------
 
-tar -xvzf Apache-Session-0.99.0.tar.gz
-cd Apache-Session-0.99.0
+tar -xvzf Apache-Session-0.99.3.tar.gz
+cd Apache-Session-0.99.3
 perl Makefile.PL
 make
 make test
@@ -55,7 +57,8 @@ Install eg/example.perl under your document root and run it.
 AUTHORS
 -------
 
-Jeffrey Baker is the author of Apache::Session.
+Jeffrey Baker <jeffrey@kathyandjeffrey.net> is the author of 
+Apache::Session.
 
 Gerald Richter <richter@ecos.de> had the idea for a tied hash interface
 and provded the initial code for it.  He also uses Apache::Session in
@@ -64,16 +67,15 @@ his Embperl module.
 Jochen Wiedeman <joe@ipsoft.de> contributed patches for bugs and
 improved performance.
 
+Steve Shreeve <shreeve@uci.edu> squashed a bug in 0.99.0 whereby
+a cleared hash or deleted key failed to set the modified bit.
+
 Randy Harmon <rjharmon@uptimecomputers.com> contributed the original
 storage-independent object interface with input from:
 
   Bavo De Ridder <bavo@ace.ulyssis.student.kuleuven.ac.be>
   Jules Bean <jmlb2@hermes.cam.ac.uk>
   Lincoln Stein <lstein@cshl.org>
-  
-Doug MacEachern wrote mod_perl.
-
-Larry Wall wrote perl.
 
 
 FURTHER INFORMATION:

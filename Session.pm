@@ -12,7 +12,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.99.0';
+$VERSION = '0.99.3';
 
 use MD5; #yes, you need MD5.pm
 
@@ -71,8 +71,12 @@ sub TIEHASH {
 
     #Make sure that the arguments to tie make sense
         
-    ASSERT($session_id !~ /[^a-f0-9]/);
-    ASSERT(ref $args eq "HASH");
+    if($session_id =~ /[^a-f0-9]/) {
+        die "Garbled session id";
+    }
+    if(ref $args ne "HASH") {
+        die "Additional arguments should be in the form of a hash reference";
+    }
 
     #Set-up the data structure and make it an object
     #of our class
@@ -125,11 +129,15 @@ sub DELETE {
     my $self = shift;
     my $key  = shift;
     
+    $self->make_modified;
+    
     delete $self->{data}->{$key};
 }
 
 sub CLEAR {
     my $self = shift;
+
+    $self->make_modified;
     
     $self->{data} = {};
 }
@@ -304,13 +312,6 @@ sub release_all_locks {
 #
 
 
-
-sub ASSERT {
-    if (!eval shift()) {
-        my @caller = caller;
-        die "Assertion failed at package $caller[0], line $caller[2]";
-    }
-}
 
 sub generate_id {
     return substr(MD5->hexhash(time(). {}. rand(). $$. 'blah'), 0, 16);

@@ -3,8 +3,11 @@ MANIFEST
 Makefile.PL
 README
 Session.pm
+Session/DBI.pm
+Session/DBIStore.pm
 Session/File.pm
 Session/NullLocker.pm
+Session/PosixFileLocker.pm
 Session/FileStore.pm
 eg/example.perl
 t/00basic.t
