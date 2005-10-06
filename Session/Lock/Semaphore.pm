@@ -49,7 +49,7 @@ sub acquire_read_lock  {
     my $session = shift;
 
     return if $self->{read};
-    die if $self->{write};
+    return if $self->{write};
 
     if (!$self->{sem}) {    
         $self->{sem} = new IPC::Semaphore($self->{sem_key}, $self->{nsems},
@@ -122,7 +122,7 @@ sub release_read_lock  {
 
     my $session = shift;
     
-    die unless $self->{read};
+    return unless $self->{read};
 
     $self->{sem}->op($self->{read_sem}, -1, SEM_UNDO);
     
@@ -133,7 +133,7 @@ sub release_write_lock {
     my $self    = shift;
     my $session = shift;
     
-    die unless $self->{write};
+    return unless $self->{write};
     
     $self->{sem}->op($self->{read_sem} + $self->{nsems}/2, -1, SEM_UNDO);
 

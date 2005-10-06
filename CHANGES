@@ -1,3 +1,7 @@
+1.8    2005-10-06
+
+  - Bug fix to stop death in Apache::Session::Lock::Semaphore.
+
 1.70_01    2004-09-01
 
   - Casey West takes the pumpkin.
