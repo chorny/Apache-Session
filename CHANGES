@@ -1,3 +1,8 @@
+1.81   2006-05-23
+
+  - Don't unconditionally try to require packages in Apache::Session::Flex
+    (Dave Rolsky).
+
 1.8    2005-10-06
 
   - Bug fix to stop death in Apache::Session::Lock::Semaphore.

@@ -10,12 +10,10 @@
 package Apache::Session::Flex;
 
 use strict;
-use vars qw(@ISA $VERSION $incl);
+use vars qw(@ISA $VERSION);
 
 $VERSION = '1.01';
 @ISA = qw(Apache::Session);
-
-$incl = {};
 
 use Apache::Session;
 
@@ -27,34 +25,29 @@ sub populate {
     my $gen   = "Apache::Session::Generate::$self->{args}->{Generate}";
     my $ser   = "Apache::Session::Serialize::$self->{args}->{Serialize}";
 
-    if (!exists $incl->{$store}) {
-        eval "require $store" || die $@;
-        $incl->{$store} = 1;
+    for my $class ($store, $lock) {
+        unless ($class->can('new')) {
+            eval "require $class" || die $@;
+        }
     }
-    
-    if (!exists $incl->{$lock}) {
-        eval "require $lock" || die $@;
-        $incl->{$lock} = 1;
-    }
-    
-    if (!exists $incl->{$gen}) {
+
+    unless ($gen->can('validate')) {
         eval "require $gen" || die $@;
-        eval '$incl->{$gen}->[0] = \&' . $gen . '::generate' || die $@;
-        eval '$incl->{$gen}->[1] = \&' . $gen . '::validate' || die $@;
     }
-    
-    if (!exists $incl->{$ser}) {
+
+    unless ($ser->can('serialize')) {
         eval "require $ser" || die $@;
-        eval '$incl->{$ser}->[0] = \&' . $ser . '::serialize'   || die $@;
-        eval '$incl->{$ser}->[1] = \&' . $ser . '::unserialize' || die $@;
     }
-    
+
     $self->{object_store} = new $store $self;
     $self->{lock_manager} = new $lock  $self;
-    $self->{generate}     = $incl->{$gen}->[0];
-    $self->{validate}     = $incl->{$gen}->[1];
-    $self->{serialize}    = $incl->{$ser}->[0];
-    $self->{unserialize}  = $incl->{$ser}->[1];
+    {
+        no strict 'refs';
+        $self->{generate}     = \&{$gen . '::generate'};
+        $self->{validate}     = \&{$gen . '::validate'};
+        $self->{serialize}    = \&{$ser . '::serialize'};
+        $self->{unserialize}  = \&{$ser . '::unserialize'};
+    }
 
     return $self;
 }
