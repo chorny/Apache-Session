@@ -4,20 +4,23 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
+BEGIN {
+ plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
   unless eval {
                require IPC::SysV;
                require IPC::Semaphore;
               };
-
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
+}
 
 plan tests => 29;
 
 my $package = 'Apache::Session::Lock::Semaphore';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
+
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
 

@@ -312,7 +312,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.81';
+$VERSION = '1.81_01';
 
 #State constants
 #

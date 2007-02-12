@@ -15,7 +15,7 @@ use Fcntl qw(:flock);
 use Symbol;
 use vars qw($VERSION);
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 $Apache::Session::Lock::File::LockDirectory = '/tmp';
 
@@ -26,10 +26,19 @@ sub new {
 }
 
 sub acquire_read_lock  {
+    if ($^O eq 'MSWin32' or $^O eq 'cygwin') {
+        #Windows cannot escalate lock, so all locks will be exclusive
+        return &acquire_write_lock;
+    }
+    #Works for acquire_read_lock => acquire_write_lock => release_all_locks
+    #This hack does not support release_read_lock
+    #Changed by Alexandr Ciornii, 2006-06-21
+
     my $self    = shift;
     my $session = shift;
     
     return if $self->{read};
+    #does not support release_read_lock
 
     if (!$self->{opened}) {
         my $fh = Symbol::gensym();
@@ -70,6 +79,9 @@ sub acquire_write_lock {
 }
 
 sub release_read_lock  {
+    if ($^O eq 'MSWin32' or $^O eq 'cygwin') {
+        die "release_read_lock is not supported on Win32 or Cygwin";
+    }
     my $self    = shift;
     my $session = shift;
     
@@ -134,11 +146,16 @@ sub clean {
     foreach my $file (@files) {
         if ($file =~ /^Apache-Session.*\.lock$/) {
             if ($now - (stat($dir.'/'.$file))[8] >= $time) {
+              if ($^O eq 'MSWin32') {
+                #Windows cannot unlink opened file
+                unlink($dir.'/'.$file) || next;
+              } else {
                 open(FH, "+>$dir/".$file) || next;
                 flock(FH, LOCK_EX) || next;
                 unlink($dir.'/'.$file) || next;
                 flock(FH, LOCK_UN);
                 close(FH);
+              }
             }
         }
     }       
@@ -186,7 +203,7 @@ If you do not supply this argument, temporary files will be created in /tmp.
 =head1 NOTES
 
 This module does not unlink temporary files, because it interferes with proper
-locking.  THis can cause problems on certain systems (Linux) whose file systems
+locking.  This can cause problems on certain systems (Linux) whose file systems
 (ext2) do not perform well with lots of files in one directory.  To prevent this
 you should use a script to clean out old files from your lock directory.
 The meaning of old is left as a policy decision for the implementor, but a
@@ -196,6 +213,14 @@ Example:
 
  my $l = new Apache::Session::Lock::File;
  $l->clean('/var/lock/sessions', 3600) #remove files older than 1 hour
+
+=head2 Win32 and Cygwin
+
+Windows cannot escalate lock, so all locks will be exclusive.
+
+release_read_lock not supported - it is not used by Apache::Session.
+
+When deleting files, they are not locked (Win32 only).
 
 =head1 AUTHOR
 

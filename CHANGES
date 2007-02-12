@@ -1,3 +1,9 @@
+1.81_01    2007-02-12 by Alexandr Ciornii
+  - My patch for Win32 and Cygwin (RT#18795)
+  - More information in Makefile.PL
+  - 99flex.t checks for Storable (RT#101)
+  - 99semaphore.t does not die if IPC:: modules are not present
+
 1.81   2006-05-23
 
   - Don't unconditionally try to require packages in Apache::Session::Flex

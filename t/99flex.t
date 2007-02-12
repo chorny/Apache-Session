@@ -4,12 +4,14 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-plan skip_all => "Optional modules (Fcntl, DB_File, IPC::Semaphore, IPC::SysV) not installed: $@"
+#use Module::Mask;my $mask = new Module::Mask ('Storable');
+plan skip_all => "Optional modules (Fcntl, DB_File, IPC::Semaphore, IPC::SysV, Storable) not installed: $@"
   unless eval {
                require Fcntl;
                require DB_File;
                require IPC::Semaphore;
                require IPC::SysV;
+               require Storable;
               };
 
 my $origdir = getcwd;
