@@ -9,14 +9,14 @@ plan skip_all => "Optional module (Digest::MD5) not installed"
                require Digest::MD5;
               };
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
-
 plan tests => 33;
 
 my $package = 'Apache::Session::Generate::MD5';
 use_ok $package;
+
+#my $origdir = getcwd;
+#my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+#chdir( $tempdir );
 
 my $session = {};
 
@@ -43,4 +43,4 @@ for my $length (5 .. 32) {
          "id is $length chars long";
 }
 
-chdir( $origdir );
+#chdir( $origdir );

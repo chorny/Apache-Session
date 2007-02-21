@@ -224,6 +224,13 @@ are persistent until the system is rebooted, so if you request 8 sempahores
 one time and 16 sempahores the next, it won't work.  Use the system
 commands ipcs and ipcrm to inspect and remove unwanted semphore blocks.
 
+=head2 Cygwin
+
+IPC on Cygwin requires running cygserver. Without it, program will exit with
+"Bad System call" message. It cannot be intercepted with eval.
+
+Read /usr/share/doc/Cygwin/cygserver.README for more information.
+
 =head1 AUTHOR
 
 This module was written by Jeffrey William Baker <jwbaker@acm.org>.

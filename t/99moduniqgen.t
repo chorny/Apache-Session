@@ -4,14 +4,14 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
-
 plan tests => 4;
 
 my $package = 'Apache::Session::Generate::ModUniqueId';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
 $ENV{UNIQUE_ID} = '12345678790abcdef';
 

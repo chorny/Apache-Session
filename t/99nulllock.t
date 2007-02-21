@@ -9,9 +9,9 @@ plan skip_all => "Optional module (Fcntl) not installed"
                require Fcntl;
               };
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
+#my $origdir = getcwd;
+#my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+#chdir( $tempdir );
 
 plan tests => 4;
 
@@ -29,4 +29,4 @@ ok $lock->release_all_locks($s), 'released all';
 
 undef $lock;
 
-chdir( $origdir );
+#chdir( $origdir );

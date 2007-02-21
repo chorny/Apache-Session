@@ -15,14 +15,14 @@ plan skip_all => "Optional module (Fcntl) not installed"
                require Fcntl;
               };
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
-
 plan tests => 4;
 
 my $package = 'Apache::Session::Lock::File';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
 my $lock    = $package->new;
 my $session = {

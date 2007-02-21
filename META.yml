@@ -1,11 +1,12 @@
 --- #YAML:1.0
 name:                Apache-Session
-version:             1.81_01
+version:             1.82
 abstract:            A persistence framework for session data
 license:             perl
 generated_by:        ExtUtils::MakeMaker version 6.31
 distribution_type:   module
 requires:     
+    File::Temp:                    0
     Test::Deep:                    0.082
     Test::Exception:               0.15
     Test::More:                    0.47

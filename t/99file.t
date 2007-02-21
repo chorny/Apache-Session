@@ -9,14 +9,14 @@ plan skip_all => "Optional module (Fcntl) not installed"
                require Fcntl;
               };
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
-
 plan tests => 9;
 
 my $package = 'Apache::Session::File';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
 my %session;
 my %tie_params = (

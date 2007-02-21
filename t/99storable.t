@@ -9,14 +9,14 @@ plan skip_all => "Optional module (Storable) not installed"
                require Storable;
               };
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
-
 plan tests => 2;
 
 my $package = 'Apache::Session::Serialize::Storable';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
 
 my $serial   = \&Apache::Session::Serialize::Storable::serialize;

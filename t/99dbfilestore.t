@@ -11,6 +11,12 @@ plan skip_all => "Optional module (DB_File) not installed"
 
 my $package = 'Apache::Session::Store::DB_File';
 
+plan tests => 13;
+
+use_ok $package;
+use_ok 'DB_File';
+can_ok $package, qw[new insert materialize remove];
+
 my $origdir = getcwd;
 my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
 chdir( $tempdir );
@@ -27,12 +33,6 @@ my $session = {
                    FileName => $dbfile,
                   },
 };
-
-plan tests => 13;
-
-use_ok $package;
-use_ok 'DB_File';
-can_ok $package, qw[new insert materialize remove];
 
 my $store = $package->new;
 isa_ok $store, $package;

@@ -9,6 +9,7 @@ WriteMakefile(
                      'Test::More'      => '0.47',
                      'Test::Deep'      => '0.082',
                      'Test::Exception' => '0.15',
+                     'File::Temp'      => 0, #core from 5.6.1
                     },
     AUTHOR          => 'Casey West <casey[at]geeknest.com>',
     ABSTRACT        => 'A persistence framework for session data',

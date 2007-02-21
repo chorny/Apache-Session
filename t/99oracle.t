@@ -4,17 +4,17 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 plan skip_all => "Optional modules (DBD::Oracle, DBI) not installed"
   unless eval {
                require DBI;
                require DBD::Oracle;
               };
-plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless $ENV{APACHE_SESSION_MAINTAINER};
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
+#my $origdir = getcwd;
+#my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+#chdir( $tempdir );
 
 plan tests => 13;
 
@@ -99,4 +99,4 @@ untie %{$session};
 $dbh->commit;
 $dbh->disconnect;
 
-chdir( $origdir );
+#chdir( $origdir );

@@ -10,6 +10,8 @@ BEGIN {
                require IPC::SysV;
                require IPC::Semaphore;
               };
+ plan skip_all => "Cygserver is not running"
+  if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
 }
 
 plan tests => 29;
@@ -17,9 +19,9 @@ plan tests => 29;
 my $package = 'Apache::Session::Lock::Semaphore';
 use_ok $package;
 
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
+#my $origdir = getcwd;
+#my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+#chdir( $tempdir );
 
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
@@ -83,4 +85,4 @@ for my $iter (2,4,6,8) {
     $sem->remove;
 }
 
-chdir( $origdir );
+#chdir( $origdir );

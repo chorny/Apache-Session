@@ -5,23 +5,22 @@ use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
-plan skip_all => "Optional modules (Fcntl, DB_File, IPC::Semaphore, IPC::SysV, Storable) not installed: $@"
+plan skip_all => "Optional modules (Fcntl, DB_File, Digest::MD5, Storable) not installed"
   unless eval {
                require Fcntl;
                require DB_File;
-               require IPC::Semaphore;
-               require IPC::SysV;
+               require Digest::MD5;
                require Storable;
               };
-
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
 
 plan tests => 12;
 
 my $package = 'Apache::Session::Flex';
 use_ok $package;
+
+my $origdir = getcwd;
+my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+chdir( $tempdir );
 
 {
     my $session = tie my %session, $package, undef, {
@@ -37,7 +36,16 @@ use_ok $package;
     is ref($session->{unserialize}), 'CODE', 'unserialize is CODE';
 }
 
-{
+SKIP: {
+    skip "Cygserver is not running",5 
+     if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
+    skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64) not installed",5
+     unless eval {
+               require IPC::Semaphore;
+               require IPC::SysV;
+               require MIME::Base64;
+              };
+
     my $session = tie my %session, $package, undef, {
         Store     => 'DB_File',
         Lock      => 'Semaphore',
