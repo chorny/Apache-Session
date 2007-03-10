@@ -38,8 +38,9 @@ sub insert {
         die "Object already exists in the data store";
     }
     
-    sysopen ($self->{fh}, $directory.'/'.$session->{data}->{_session_id}, O_RDWR|O_CREAT) ||
-        die "Could not open file ".$directory.'/'.$session->{data}->{_session_id}.": $!";
+    my $file = $directory.'/'.$session->{data}->{_session_id};
+    sysopen ($self->{fh}, $file, O_RDWR|O_CREAT) ||
+        die "Could not open file $file: $!";
 
     $self->{opened} = 1;
     
@@ -53,9 +54,10 @@ sub update {
     my $directory = $session->{args}->{Directory} || $Apache::Session::Store::File::Directory;
 
     if (!$self->{opened}) {
-        sysopen ($self->{fh}, $directory.'/'.$session->{data}->{_session_id}, O_RDWR|O_CREAT) ||
-            die "Could not open file: $!";
-        
+        my $file = $directory.'/'.$session->{data}->{_session_id};
+        sysopen ($self->{fh}, $file, O_RDWR|O_CREAT) ||
+            die "Could not open file $file: $!";
+
         $self->{opened} = 1;
     }
     
@@ -70,10 +72,11 @@ sub materialize {
     
     my $directory = $session->{args}->{Directory} || $Apache::Session::Store::File::Directory;
     
-    if (-e $directory.'/'.$session->{data}->{_session_id}) {
+    my $file = $directory.'/'.$session->{data}->{_session_id};
+    if (-e $file) {
         if (!$self->{opened}) {
-            sysopen ($self->{fh}, $directory.'/'.$session->{data}->{_session_id}, O_RDWR|O_CREAT) ||
-                die "Could not open file: $!";
+            sysopen ($self->{fh}, $file, O_RDWR|O_CREAT) ||
+                die "Could not open file $file: $!";
 
             $self->{opened} = 1;
         }
@@ -102,9 +105,10 @@ sub remove {
         $self->{opened} = 0;
     }
 
-    if (-e $directory.'/'.$session->{data}->{_session_id}) {
-        unlink ($directory.'/'.$session->{data}->{_session_id}) ||
-            die "Could not remove file: $!";
+    my $file = $directory.'/'.$session->{data}->{_session_id};
+    if (-e $file) {
+        unlink ($file) ||
+            die "Could not remove file $file: $!";
     }
     else {
         die "Object does not exist in the data store";

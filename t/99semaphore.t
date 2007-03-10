@@ -3,8 +3,10 @@ use Test::Deep;
 use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
+use Config;
 
 BEGIN {
+ plan skip_all => "semget not implemented" unless $Config{d_semget};
  plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
   unless eval {
                require IPC::SysV;

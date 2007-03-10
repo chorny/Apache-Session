@@ -29,7 +29,7 @@ sub insert {
         my $rv = tie %{$self->{dbm}}, 'DB_File', $session->{args}->{FileName};
 
         if (!$rv) {
-            die "Could not open dbm file: $!";
+            die "Could not open dbm file $session->{args}->{FileName}: $!";
         }
     }
     
@@ -48,7 +48,7 @@ sub update {
         my $rv = tie %{$self->{dbm}}, 'DB_File', $session->{args}->{FileName};
 
         if (!$rv) {
-            die "Could not open dbm file: $!";
+            die "Could not open dbm file $session->{args}->{FileName}: $!";
         }
     }
     
@@ -63,7 +63,7 @@ sub materialize {
         my $rv = tie %{$self->{dbm}}, 'DB_File', $session->{args}->{FileName};
 
         if (!$rv) {
-            die "Could not open dbm file: $!";
+            die "Could not open dbm file $session->{args}->{FileName}: $!";
         }
     }
     
@@ -82,7 +82,7 @@ sub remove {
         my $rv = tie %{$self->{dbm}}, 'DB_File', $session->{args}->{FileName};
 
         if (!$rv) {
-            die "Could not open dbm file: $!";
+            die "Could not open dbm file $session->{args}->{FileName}: $!";
         }
     }
     

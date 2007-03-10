@@ -3,7 +3,12 @@ use Test::Deep;
 use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
+use strict;
 
+plan skip_all => "Only for perl 5.8.0 or later"
+  unless eval {
+   require 5.8.0;
+  };
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
 plan skip_all => "Optional modules (Fcntl, DB_File, Digest::MD5, Storable) not installed"
   unless eval {
@@ -18,8 +23,9 @@ plan tests => 12;
 my $package = 'Apache::Session::Flex';
 use_ok $package;
 
-my $origdir = getcwd;
+#$Apache::Session::Lock::File::LockDirectory=$tempdir;
 my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
+my $origdir = getcwd;
 chdir( $tempdir );
 
 {
@@ -28,6 +34,8 @@ chdir( $tempdir );
         Lock      => 'File',
         Generate  => 'MD5',
         Serialize => 'Storable',
+#        Directory     => $tempdir,
+#        LockDirectory => $tempdir,
     };
     isa_ok $session->{object_store}, 'Apache::Session::Store::File';
     isa_ok $session->{lock_manager}, 'Apache::Session::Lock::File';
@@ -36,7 +44,7 @@ chdir( $tempdir );
     is ref($session->{unserialize}), 'CODE', 'unserialize is CODE';
 }
 
-SKIP: {
+SKIP: { #Flex that uses IPC
     skip "Cygserver is not running",5 
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
     skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64) not installed",5

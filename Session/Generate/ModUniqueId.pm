@@ -8,7 +8,7 @@ sub generate {
     my $session = shift;
     unless (exists $ENV{UNIQUE_ID}) {
 	require Carp;
-	Carp::croak 'Can\'t get UNIQUE_ID env variable. Make sure mod_unique_id is enabled.';
+	Carp::croak('Can\'t get UNIQUE_ID env variable. Make sure mod_unique_id is enabled.');
     }
     $session->{data}->{_session_id} = $ENV{UNIQUE_ID};
 }

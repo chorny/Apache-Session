@@ -23,7 +23,7 @@ sub generate {
     unless ($cookies{$name}) {
 	# still bad luck
 	require Carp;
-	Carp::croak 'no cookie found. Make sure mod_usertrack is enabled.';
+	Carp::croak('no cookie found. Make sure mod_usertrack is enabled.');
     }
     $session->{data}->{_session_id} = $cookies{$name}->value;
 }

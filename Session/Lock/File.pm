@@ -85,11 +85,11 @@ sub release_read_lock  {
     my $self    = shift;
     my $session = shift;
     
-    die unless $self->{read};
+    die "No read lock to release in release_read_lock" unless $self->{read};
     
     if (!$self->{write}) {
         flock($self->{fh}, LOCK_UN);
-        close $self->{fh} || die $!;
+        close $self->{fh} || die "Could no close file: $!";
         $self->{opened} = 0;
     }
     
@@ -100,14 +100,14 @@ sub release_write_lock {
     my $self    = shift;
     my $session = shift;
     
-    die unless $self->{write};
+    die "No write lock acquired" unless $self->{write};
     
     if ($self->{read}) {
         flock($self->{fh}, LOCK_SH);
     }
     else {
         flock($self->{fh}, LOCK_UN);
-        close $self->{fh} || die $!;
+        close $self->{fh} || die "Could not close file: $!";
         $self->{opened} = 0;
     }
     
@@ -120,7 +120,7 @@ sub release_all_locks  {
 
     if ($self->{opened}) {
         flock($self->{fh}, LOCK_UN);
-        close $self->{fh} || die $!;
+        close $self->{fh} || die "Could not close file: $!";
     }
     
     $self->{opened} = 0;
@@ -141,7 +141,7 @@ sub clean {
 
     my $now = time();
     
-    opendir(DIR, $dir) || die $!;
+    opendir(DIR, $dir) || die "Could not open directory $dir: $!";
     my @files = readdir(DIR);
     foreach my $file (@files) {
         if ($file =~ /^Apache-Session.*\.lock$/) {
