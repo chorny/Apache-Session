@@ -1,5 +1,13 @@
 use ExtUtils::MakeMaker;
 
+print << 'EOT';
+
+*** REQUEST ***
+Please use Test::Reporter to report test results - it's the only way to measure
+popularity of distribution.
+
+EOT
+
 WriteMakefile(
     NAME         => "Apache::Session",
     VERSION_FROM => "Session.pm",
@@ -11,6 +19,8 @@ WriteMakefile(
                      'Test::Exception' => '0.15',
                      'File::Temp'      => 0, #core from 5.6.1
                      'Storable'        => '0.6', #Will be raised later
+#                     'MIME::Base64'    => 0, #test
+#                     'DB_File'         => 0, #test
                     },
     AUTHOR          => 'Casey West <casey[at]geeknest.com>',
     ABSTRACT        => 'A persistence framework for session data',

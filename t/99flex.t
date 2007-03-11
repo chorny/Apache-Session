@@ -4,6 +4,7 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 use strict;
+use Config;
 
 plan skip_all => "Only for perl 5.8.0 or later"
   unless eval {
@@ -45,6 +46,7 @@ chdir( $tempdir );
 }
 
 SKIP: { #Flex that uses IPC
+    skip "semget not implemented",5 unless $Config{d_semget};
     skip "Cygserver is not running",5 
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
     skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64) not installed",5

@@ -1,10 +1,20 @@
-1.82_01   2007-03-10 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.82_02   2007-03-11 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - 99semaphore.t, 99flex.t will be skipped if $Config{d_semget}==undef,
+    patch by Slaven Rezic
+  - Removed redundant code in 99filelock.t
+  - Removed unnecessary skip in 99nulllock.t
+  - Added file 'Contrubuting.txt'
+  - Apache::Session - mention CGI::Session
+  - Request in Makefile.PL
+
+1.82_01   2007-03-10 by Alexandr Ciornii
   - Applied part of patch of SREZIC (Slaven Rezic), RT#3670,
-    more diagnostics in file operations (Apache::Session::Lock::File,
+    more diagnostics on failing file operations (Apache::Session::Lock::File,
     Apache::Session::Store::DB_File, Apache::Session::Store::File)
-  - RT#1251, ModUniqueId.pm, ModUsertrack.pm - small error in Carp usage
+  - RT#1251, ModUniqueId.pm, ModUsertrack.pm - small error in Carp usage,
+    by Slaven Rezic
   - 99flex.t will be skipped on perls earlier than 5.8 (RT#16539)
-  - requires Storable (core from 5.7.3), as it almost useless without it
+  - Requires Storable (core from 5.7.3), as it is almost useless without it
 
 1.82   2007-02-21 by Alexandr Ciornii
   - Slightly faster test skip
@@ -12,8 +22,8 @@
   - 99flex.t skips less tests in some cases
   - 99flex.t checks for Digest::MD5, MIME::Base64
   - Warning in doc of Apache::Session::Lock::Semaphore about cygserver
-  - requires File::Temp (core from 5.6.1), needed for tests and work
-  - changed order of use/chdir in tests (RT#16539, from Andrew Benham)
+  - Requires File::Temp (core from 5.6.1), needed for tests and work
+  - Changed order of use/chdir in tests (RT#16539, from Andrew Benham)
 
 1.81_01   2007-02-12 by Alexandr Ciornii
   - My patch for Win32 and Cygwin (RT#18795)
@@ -43,18 +53,18 @@ Changes in 1.6 (2004-02-24):
 Fixed file age test for clean().  The previous test was never true.
 
 Applied patch to add TableName option to the DBI/MySQL store.  
-From Corris Randall <corris@line6.net>.  Tests added by jwb.
+From Corris Randall <corris AT line6.net>.  Tests added by jwb.
 
-Applied patch from Oliver Maul <oliver.maul@ixos.de> for better Sybase support,
+Applied patch from Oliver Maul <oliver.maul AT ixos.de> for better Sybase support,
 without tests.
 
-Informix support from Mike Langen <mike.langen@tamedia.ch>.  Unfortunately no
+Informix support from Mike Langen <mike.langen AT tamedia.ch>.  Unfortunately no
 tests were included.
 
 Changes in 1.54 (2001-10-11):
 
 Added mod_uniqueid and mod_usertrack generators from 
-Tatsuhiko Miyagawa <miyagawa@bulknews.net>
+Tatsuhiko Miyagawa <miyagawa AT bulknews.net>
 
 Fixed validate function in Flex.
 
@@ -64,26 +74,26 @@ Changes in 1.53 (2000-09-01):
 
 ?
 
-Changes in 1.52:
+Changes in 1.52 (2000-07-23):
 
-Chris Winters <cwinters@intes.net> added the Sybase backing store and 
+Chris Winters <cwinters AT intes.net> added the Sybase backing store and 
 related modules.  
 
-Michael Schout <mschout@gkg.net> fixed a commit policy bug in 1.51.
+Michael Schout <mschout AT gkg.net> fixed a commit policy bug in 1.51.
 
-Edward Lopez <zed@apricot.com> fixed a thinko in the POD.
+Edward Lopez <zed AT apricot.com> fixed a thinko in the POD.
 
-Peter Baker <Peter@eBluegrass.com> fixed a typo in the POD.
+Peter Baker <Peter AT eBluegrass.com> fixed a typo in the POD.
 
-Andrew Wild <andrew@eservers.com.au> fixed a typo in the POD.
+Andrew Wild <andrew AT eservers.com.au> fixed a typo in the POD.
 
-Alan Sparks <asparks@cpd.harris.com> fixed a type in the POD.
+Alan Sparks <asparks AT cpd.harris.com> fixed a type in the POD.
 
-Jay Lawrence <jlawrenc@infonium.com> changed the interface so that an undefined
+Jay Lawrence <jlawrenc AT infonium.com> changed the interface so that an undefined
 or false variable indicates a fresh session.  Previously, only undefined was
 considered new.
 
-Lupe Christoph <lupe@lupe-christoph.de> noticed that there was a buffer
+Lupe Christoph <lupe AT lupe-christoph.de> noticed that there was a buffer
 race condition in the file store, which is now fixed.
 
 

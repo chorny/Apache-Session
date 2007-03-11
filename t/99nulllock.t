@@ -4,11 +4,6 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-plan skip_all => "Optional module (Fcntl) not installed"
-  unless eval {
-               require Fcntl;
-              };
-
 #my $origdir = getcwd;
 #my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
 #chdir( $tempdir );

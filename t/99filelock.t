@@ -4,12 +4,6 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-eval {require Fcntl;};
-if ($@) {
-    print "1..0\n";
-    exit;
-}
-
 plan skip_all => "Optional module (Fcntl) not installed"
   unless eval {
                require Fcntl;

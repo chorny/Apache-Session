@@ -249,6 +249,9 @@ Apache::Session::DB_File, Apache::Session::Oracle, Apache::Session::Sybase
 The O Reilly book "Apache Modules in Perl and C", by Doug MacEachern and
 Lincoln Stein, has a chapter on keeping state.
 
+CGI::Session uses OO interface to do same thing. It is better maintained,
+but less possibilies.
+
 =head1 AUTHORS
 
 Jeffrey Baker <jwbaker@acm.org> is the author of 
@@ -312,7 +315,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.82_01';
+$VERSION = '1.82_02';
 
 #State constants
 #
