@@ -52,7 +52,11 @@ sub acquire_read_lock  {
         $self->{opened} = 1;
     }
         
-    flock($self->{fh}, LOCK_SH);
+    if (!$self->{write}) {
+     #acquiring read lock, when write lock is in effect will clear write lock
+     flock($self->{fh}, LOCK_SH) || die "Cannot lock: $!";
+    }
+
     $self->{read} = 1;
 }
 
@@ -74,7 +78,7 @@ sub acquire_write_lock {
         $self->{opened} = 1;
     }
     
-    flock($self->{fh}, LOCK_EX);    
+    flock($self->{fh}, LOCK_EX) || die "Cannot lock: $!";
     $self->{write} = 1;
 }
 
@@ -88,7 +92,7 @@ sub release_read_lock  {
     die "No read lock to release in release_read_lock" unless $self->{read};
     
     if (!$self->{write}) {
-        flock($self->{fh}, LOCK_UN);
+        flock($self->{fh}, LOCK_UN) || die "Cannot unlock: $!";
         close $self->{fh} || die "Could no close file: $!";
         $self->{opened} = 0;
     }
@@ -103,10 +107,10 @@ sub release_write_lock {
     die "No write lock acquired" unless $self->{write};
     
     if ($self->{read}) {
-        flock($self->{fh}, LOCK_SH);
+        flock($self->{fh}, LOCK_SH) || die "Cannot lock: $!";
     }
     else {
-        flock($self->{fh}, LOCK_UN);
+        flock($self->{fh}, LOCK_UN) || die "Cannot unlock: $!";
         close $self->{fh} || die "Could not close file: $!";
         $self->{opened} = 0;
     }
@@ -119,7 +123,7 @@ sub release_all_locks  {
     my $session = shift;
 
     if ($self->{opened}) {
-        flock($self->{fh}, LOCK_UN);
+        flock($self->{fh}, LOCK_UN) || die "Cannot unlock: $!";
         close $self->{fh} || die "Could not close file: $!";
     }
     
@@ -147,7 +151,7 @@ sub clean {
         if ($file =~ /^Apache-Session.*\.lock$/) {
             if ($now - (stat($dir.'/'.$file))[8] >= $time) {
               if ($^O eq 'MSWin32') {
-                #Windows cannot unlink opened file
+                #Windows cannot unlink open file
                 unlink($dir.'/'.$file) || next;
               } else {
                 open(FH, "+>$dir/".$file) || next;
@@ -158,7 +162,8 @@ sub clean {
               }
             }
         }
-    }       
+    }
+    closedir(DIR);
 }
 
 1;
@@ -202,6 +207,8 @@ If you do not supply this argument, temporary files will be created in /tmp.
 
 =head1 NOTES
 
+=head2 clean
+
 This module does not unlink temporary files, because it interferes with proper
 locking.  This can cause problems on certain systems (Linux) whose file systems
 (ext2) do not perform well with lots of files in one directory.  To prevent this
@@ -213,6 +220,14 @@ Example:
 
  my $l = new Apache::Session::Lock::File;
  $l->clean('/var/lock/sessions', 3600) #remove files older than 1 hour
+
+=head2 acquire_read_lock
+
+Will do nothing if write lock is in effect, only set readlock flag to true.
+
+=head2 release_read_lock
+
+Will do nothing if write lock is in effect, only set readlock flag to false.
 
 =head2 Win32 and Cygwin
 

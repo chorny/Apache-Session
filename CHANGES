@@ -1,3 +1,11 @@
+1.82_03   2007-03-12 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - Apache::Session::Lock::File checks flock success (RT#6936)
+  - Apache::Session::Lock::File does not change to shared lock if write
+    lock is in effect and read lock is requested (RT#7072)
+  - 99dbfile.t, 99dbfilestore.t - added untie (for RT#6216)
+  - Apache::Session::Lock::Semaphore will check for $Config{d_semget} and
+    cygserver
+
 1.82_02   2007-03-11 by Alexandr Ciornii (alexchorny AT gmail.com)
   - 99semaphore.t, 99flex.t will be skipped if $Config{d_semget}==undef,
     patch by Slaven Rezic

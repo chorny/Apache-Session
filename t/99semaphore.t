@@ -7,6 +7,8 @@ use Config;
 
 BEGIN {
  plan skip_all => "semget not implemented" unless $Config{d_semget};
+ #Darwin may not have semaphores, see
+ #http://sysnet.ucsd.edu/~bellardo/darwin/sysvsem.html
  plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
   unless eval {
                require IPC::SysV;

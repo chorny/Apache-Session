@@ -74,5 +74,6 @@ dies_ok {
 } "Can't materialize removed session";
 
 undef $store;
+untie %hash;
 
 chdir( $origdir );

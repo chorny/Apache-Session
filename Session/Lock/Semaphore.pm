@@ -31,6 +31,11 @@ sub BEGIN {
 }
 
 sub new {
+    return undef unless $Config{d_semget};
+    return undef 
+     if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
+    #Modified by Alexandr Ciornii, 2007-03-12
+
     my $class   = shift;
     my $session = shift;
     
@@ -59,7 +64,7 @@ sub acquire_read_lock  {
     if (!defined $self->{read_sem}) {
         #The number of semaphores (2^2-2^4, typically) is much less than
         #the potential number of session ids (2^128, typically), we need 
-        #to hash the session id to choose a sempahore.  This hash routine
+        #to hash the session id to choose a semaphore.  This hash routine
         #was stolen from Kernighan's The Practice of Programming.
 
         my $read_sem = 0;
@@ -71,8 +76,8 @@ sub acquire_read_lock  {
         $self->{read_sem} = $read_sem;
     }    
     
-    #The sempahore block is divided into two halves.  The lower half
-    #holds the read sempahores, and the upper half holds the write
+    #The semaphore block is divided into two halves.  The lower half
+    #holds the read semaphores, and the upper half holds the write
     #semaphores.  Thus we can do atomic upgrade of a read lock to a
     #write lock.
     
@@ -96,7 +101,7 @@ sub acquire_write_lock {
     if (!defined $self->{read_sem}) {
         #The number of semaphores (2^2-2^4, typically) is much less than
         #the potential number of session ids (2^128, typically), we need 
-        #to hash the session id to choose a sempahore.  This hash routine
+        #to hash the session id to choose a semaphore.  This hash routine
         #was stolen from Kernighan's The Practice of Programming.
 
         my $read_sem = 0;
@@ -170,13 +175,14 @@ sub hash {
 
 =head1 NAME
 
-Apache::Session::Lock::Semaphore - Provides mutual exclusion through sempahores
+Apache::Session::Lock::Semaphore - Provides mutual exclusion through semaphores
 
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::Semaphore;
  
  my $locker = new Apache::Session::Lock::Semaphore;
+ die "no semaphores" unless $locker;
  
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
@@ -186,7 +192,7 @@ Apache::Session::Lock::Semaphore - Provides mutual exclusion through sempahores
 
 =head1 DESCRIPTION
 
-Apache::Session::Lock::Sempahore fulfills the locking interface of 
+Apache::Session::Lock::semaphore fulfills the locking interface of 
 Apache::Session.  Mutual exclusion is achieved through system semaphores and
 the IPC::Semaphore module.
 
@@ -194,7 +200,7 @@ the IPC::Semaphore module.
 
 The module must know how many semaphores to use, and what semaphore key to
 use.  The number of semaphores has an impact on performance.  More semaphores
-meansless lock contention.  You should use the maximum number of sempahores
+meansless lock contention.  You should use the maximum number of semaphores
 that your platform will allow.  On stock NetBSD, OpenBSD, and Solaris systems,
 this is probably 16.  On Linux 2.2, this is 32.  This module tries to guess
 the number based on your operating system, but it is safer to configure it
@@ -220,8 +226,8 @@ package.
 If you get an invalid argument message, that usually means that the system
 is unhappy with the number of semaphores that you requested.  Try decreasing
 the number of semaphores.  The semaphore blocks that this package creates
-are persistent until the system is rebooted, so if you request 8 sempahores
-one time and 16 sempahores the next, it won't work.  Use the system
+are persistent until the system is rebooted, so if you request 8 semaphores
+one time and 16 semaphores the next, it won't work.  Use the system
 commands ipcs and ipcrm to inspect and remove unwanted semphore blocks.
 
 =head2 Cygwin
@@ -230,6 +236,11 @@ IPC on Cygwin requires running cygserver. Without it, program will exit with
 "Bad System call" message. It cannot be intercepted with eval.
 
 Read /usr/share/doc/Cygwin/cygserver.README for more information.
+
+=head2 Darwin/MacOS X
+
+Darwin and MacOS X may not have semaphores, see
+http://sysnet.ucsd.edu/~bellardo/darwin/sysvsem.html
 
 =head1 AUTHOR
 
