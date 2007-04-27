@@ -2,7 +2,7 @@ package Apache::Session::Generate::ModUsertrack;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use CGI::Cookie;
 use constant MOD_PERL => exists $ENV{MOD_PERL};

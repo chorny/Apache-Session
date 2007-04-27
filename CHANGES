@@ -1,17 +1,25 @@
+1.82_04   2007-04-27 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - More diagnostics in Apache::Session::Lock::Semaphore::acquire_write_lock,
+    acquire_read_lock
+  - Did not increment modules versions in previous versions of distribution
+  - Apache::Session::Lock::Semaphore can work with private semaphore
+  - 99flex.t will use private semaphore
+  - 99dbfile.t, 99dbfilestore.t - added undef (for RT#6216)
+
 1.82_03   2007-03-12 by Alexandr Ciornii (alexchorny AT gmail.com)
   - Apache::Session::Lock::File checks flock success (RT#6936)
-  - Apache::Session::Lock::File does not change to shared lock if write
+  - Apache::Session::Lock::File will not change to shared lock if write
     lock is in effect and read lock is requested (RT#7072)
   - 99dbfile.t, 99dbfilestore.t - added untie (for RT#6216)
   - Apache::Session::Lock::Semaphore will check for $Config{d_semget} and
     cygserver
 
-1.82_02   2007-03-11 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.82_02   2007-03-11 by Alexandr Ciornii
   - 99semaphore.t, 99flex.t will be skipped if $Config{d_semget}==undef,
     patch by Slaven Rezic
   - Removed redundant code in 99filelock.t
   - Removed unnecessary skip in 99nulllock.t
-  - Added file 'Contrubuting.txt'
+  - Added file 'Contributing.txt'
   - Apache::Session - mention CGI::Session
   - Request in Makefile.PL
 

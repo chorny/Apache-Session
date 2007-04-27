@@ -75,5 +75,6 @@ dies_ok {
 
 undef $store;
 untie %hash;
+undef %hash;
 
 chdir( $origdir );

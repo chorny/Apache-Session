@@ -53,6 +53,6 @@ cmp_deeply $session{baz}, $baz, "Baz matches";
 
 tied(%session)->delete;
 untie %session;
-%session=();
+undef %session;
 
 chdir( $origdir );

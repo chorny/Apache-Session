@@ -14,7 +14,7 @@ use Symbol;
 use Fcntl;
 use vars qw($VERSION);
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 $Apache::Session::Store::File::Directory = '/tmp';
 

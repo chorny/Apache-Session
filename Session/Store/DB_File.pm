@@ -13,7 +13,7 @@ use strict;
 use vars qw($VERSION);
 use DB_File;
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub new {
     my $class = shift;
@@ -44,7 +44,7 @@ sub update {
     my $self = shift;
     my $session = shift;
     
-        if (!tied %{$self->{dbm}}) {
+    if (!tied %{$self->{dbm}}) {
         my $rv = tie %{$self->{dbm}}, 'DB_File', $session->{args}->{FileName};
 
         if (!$rv) {

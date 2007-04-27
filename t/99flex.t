@@ -9,6 +9,7 @@ use Config;
 plan skip_all => "Only for perl 5.8.0 or later"
   unless eval {
    require 5.8.0;
+   #perl 5.6 don't like this test. See RT#16539.
   };
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
 plan skip_all => "Optional modules (Fcntl, DB_File, Digest::MD5, Storable) not installed"
@@ -56,12 +57,17 @@ SKIP: { #Flex that uses IPC
                require MIME::Base64;
               };
 
+    require Apache::Session::Lock::Semaphore;
+    $Apache::Session::Lock::Semaphore::sem_key=undef;
     my $session = tie my %session, $package, undef, {
         Store     => 'DB_File',
         Lock      => 'Semaphore',
         Generate  => 'MD5',
         Serialize => 'Base64',
-    };
+#        SemaphoreKey => undef,
+#        SemaphoreKey => 31817,
+    }; #Apache::Session::save in TIEHASH does acquire_write_lock
+
     isa_ok $session->{object_store}, 'Apache::Session::Store::DB_File';
     isa_ok $session->{lock_manager}, 'Apache::Session::Lock::Semaphore';
     is ref($session->{generate}),    'CODE', 'generate is CODE';

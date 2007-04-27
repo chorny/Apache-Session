@@ -315,7 +315,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.82_03';
+$VERSION = '1.82_04';
 
 #State constants
 #
@@ -500,7 +500,7 @@ sub restore {
     &{$self->{unserialize}}($self);
     
     $self->{status} &= ($self->{status} ^ MODIFIED);
-    $self->{status} |= SYNCED
+    $self->{status} |= SYNCED;
 }
 
 sub save {

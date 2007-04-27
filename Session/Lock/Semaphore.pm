@@ -11,13 +11,13 @@ package Apache::Session::Lock::Semaphore;
 
 use strict;
 use Config;
-use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
+use IPC::SysV qw(IPC_PRIVATE IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 
-sub BEGIN {
+BEGIN {
 
     if ($Config{'osname'} eq 'linux') {
         #More semaphores on Linux means less lock contention
@@ -42,7 +42,12 @@ sub new {
     my $nsems = $session->{args}->{NSems} ||
         $Apache::Session::Lock::Semaphore::nsems;
     
-    my $sem_key = $session->{args}->{SemaphoreKey} ||
+#    die "You shouldn't set session argument SemaphoreKey to undef"
+#     if exists($session->{args}->{SemaphoreKey}) && 
+#        !defined ($session->{args}->{SemaphoreKey});
+
+    my $sem_key = #exists ($session->{args}->{SemaphoreKey})?
+        $session->{args}->{SemaphoreKey} || 
         $Apache::Session::Lock::Semaphore::sem_key;
 
     return bless {read => 0, write => 0, sem => undef, nsems => $nsems, 
@@ -57,13 +62,14 @@ sub acquire_read_lock  {
     return if $self->{write};
 
     if (!$self->{sem}) {    
-        $self->{sem} = new IPC::Semaphore($self->{sem_key}, $self->{nsems},
-            IPC_CREAT | S_IRWXU) || die $!;
+        $self->{sem} = new IPC::Semaphore(
+            defined($self->{sem_key})?$self->{sem_key}:IPC_PRIVATE, $self->{nsems},
+            IPC_CREAT | S_IRWXU) || die "Cannot create semaphore with key $self->{sem_key}: $!";
     }
     
     if (!defined $self->{read_sem}) {
         #The number of semaphores (2^2-2^4, typically) is much less than
-        #the potential number of session ids (2^128, typically), we need 
+        #the potential number of session ids (2^128, typically), we need
         #to hash the session id to choose a semaphore.  This hash routine
         #was stolen from Kernighan's The Practice of Programming.
 
@@ -94,8 +100,9 @@ sub acquire_write_lock {
     return if($self->{write});
 
     if (!$self->{sem}) {
-        $self->{sem} = new IPC::Semaphore($self->{sem_key}, $self->{nsems}, 
-            IPC_CREAT | S_IRWXU) || die $!;
+        $self->{sem} = new IPC::Semaphore(
+            defined($self->{sem_key})?$self->{sem_key}:IPC_PRIVATE, $self->{nsems},
+            IPC_CREAT | S_IRWXU) || die "Cannot create semaphore with key $self->{sem_key}: $!";
     }
     
     if (!defined $self->{read_sem}) {
@@ -199,20 +206,20 @@ the IPC::Semaphore module.
 =head1 CONFIGURATION
 
 The module must know how many semaphores to use, and what semaphore key to
-use.  The number of semaphores has an impact on performance.  More semaphores
-meansless lock contention.  You should use the maximum number of semaphores
-that your platform will allow.  On stock NetBSD, OpenBSD, and Solaris systems,
-this is probably 16.  On Linux 2.2, this is 32.  This module tries to guess
+use. The number of semaphores has an impact on performance.  More semaphores
+means less lock contention. You should use the maximum number of semaphores
+that your platform will allow. On stock NetBSD, OpenBSD, and Solaris systems,
+this is probably 16. On Linux 2.2, this is 32. This module tries to guess
 the number based on your operating system, but it is safer to configure it
 yourself.
 
 To set the number of semaphores, you need to pass an argument in the usual
-Apache::Session style.  The name of the argument is NSems, and the value is
-an integer power of 2.  For example:
+Apache::Session style. The name of the argument is NSems, and the value is
+an integer power of 2. For example:
 
  tie %s, 'Apache::Session::Blah', $id, {NSems => 16};
 
-You may also need to configure the semaphore key that this package uses.  By
+You may also need to configure the semaphore key that this package uses. By
 default, it uses key 31818.  You can change this using the argument
 SemaphoreKey:
 

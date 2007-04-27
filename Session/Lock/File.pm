@@ -15,7 +15,7 @@ use Fcntl qw(:flock);
 use Symbol;
 use vars qw($VERSION);
 
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 $Apache::Session::Lock::File::LockDirectory = '/tmp';
 
