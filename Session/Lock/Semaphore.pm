@@ -247,7 +247,13 @@ Read /usr/share/doc/Cygwin/cygserver.README for more information.
 =head2 Darwin/MacOS X
 
 Darwin and MacOS X may not have semaphores, see
-http://sysnet.ucsd.edu/~bellardo/darwin/sysvsem.html
+L<http://sysnet.ucsd.edu/~bellardo/darwin/sysvsem.html>
+
+=head2 *BSD
+
+Error "No space left on device" means that maximum number of semaphores is reached.
+See L<http://www.postgresql.org/docs/7.3/static/kernel-resources.html> for
+more information.
 
 =head1 AUTHOR
 

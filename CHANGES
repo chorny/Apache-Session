@@ -1,3 +1,6 @@
+1.82_05   2007-05-14 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - skipping part of 99flex.t on NetBSD
+
 1.82_04   2007-04-27 by Alexandr Ciornii (alexchorny AT gmail.com)
   - More diagnostics in Apache::Session::Lock::Semaphore::acquire_write_lock,
     acquire_read_lock

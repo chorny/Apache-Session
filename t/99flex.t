@@ -50,6 +50,8 @@ SKIP: { #Flex that uses IPC
     skip "semget not implemented",5 unless $Config{d_semget};
     skip "Cygserver is not running",5 
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
+    skip "NetBSD does not like anonymous semaphores",5 
+     if $^O =~ /netbsd/i;
     skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64) not installed",5
      unless eval {
                require IPC::Semaphore;
@@ -59,6 +61,7 @@ SKIP: { #Flex that uses IPC
 
     require Apache::Session::Lock::Semaphore;
     $Apache::Session::Lock::Semaphore::sem_key=undef;
+    $Apache::Session::Lock::Semaphore::sem_key=$Apache::Session::Lock::Semaphore::sem_key;
     my $session = tie my %session, $package, undef, {
         Store     => 'DB_File',
         Lock      => 'Semaphore',
