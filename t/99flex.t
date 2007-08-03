@@ -12,10 +12,9 @@ plan skip_all => "Only for perl 5.8.0 or later"
    #perl 5.6 don't like this test. See RT#16539.
   };
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
-plan skip_all => "Optional modules (Fcntl, DB_File, Digest::MD5, Storable) not installed"
+plan skip_all => "Optional modules (Fcntl, Digest::MD5, Storable) not installed"
   unless eval {
                require Fcntl;
-               require DB_File;
                require Digest::MD5;
                require Storable;
               };
@@ -52,11 +51,12 @@ SKIP: { #Flex that uses IPC
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
     skip "NetBSD does not like anonymous semaphores",5 
      if $^O =~ /netbsd/i;
-    skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64) not installed",5
+    skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64, DB_File) not installed",5
      unless eval {
                require IPC::Semaphore;
                require IPC::SysV;
                require MIME::Base64;
+               require DB_File;
               };
 
     require Apache::Session::Lock::Semaphore;

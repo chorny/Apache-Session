@@ -13,7 +13,7 @@ use strict;
 use vars qw($VERSION);
 use Storable qw(nfreeze thaw);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub serialize {
     my $session = shift;
@@ -24,7 +24,9 @@ sub serialize {
 sub unserialize {
     my $session = shift;
     
-    $session->{data} = thaw(unpack("u", $session->{serialized}));
+    my $data = thaw(unpack("u", $session->{serialized}));
+    die "Session could not be unserialized" unless defined $data;
+    $session->{data} = $data;
 }
 
 1;
@@ -39,7 +41,7 @@ to zip up persistent data
 =head1 SYNOPSIS
 
  use Apache::Session::Serialize::UUEncode;
- 
+
  $zipped = Apache::Session::Serialize::UUEncode::serialize($ref);
  $ref = Apache::Session::Serialize::UUEncode::unserialize($zipped);
 

@@ -14,7 +14,7 @@ use vars qw($VERSION);
 use MIME::Base64;
 use Storable qw(nfreeze thaw);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub serialize {
     my $session = shift;
@@ -25,7 +25,9 @@ sub serialize {
 sub unserialize {
     my $session = shift;
     
-    $session->{data} = thaw(decode_base64($session->{serialized}));
+    my $data = thaw(decode_base64($session->{serialized}));
+    die "Session could not be unserialized" unless defined $data;
+    $session->{data} = $data;
 }
 
 1;
@@ -40,7 +42,7 @@ to zip up persistent data
 =head1 SYNOPSIS
 
  use Apache::Session::Serialize::Base64;
- 
+
  $zipped = Apache::Session::Serialize::Base64::serialize($ref);
  $ref = Apache::Session::Serialize::Base64::unserialize($zipped);
 

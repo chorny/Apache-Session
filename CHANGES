@@ -1,8 +1,11 @@
+1.83_01   2007-08-03 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - better handling of Storable errors by Rick Delaney (RT#27476)
+
 1.83=1.82_05  2007-05-25
 1.82_05   2007-05-14 by Alexandr Ciornii (alexchorny AT gmail.com)
   - skipping part of 99flex.t on NetBSD
 
-1.82_04   2007-04-27 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.82_04   2007-04-27 by Alexandr Ciornii
   - More diagnostics in Apache::Session::Lock::Semaphore::acquire_write_lock,
     acquire_read_lock
   - Did not increment modules versions in previous versions of distribution
@@ -10,7 +13,7 @@
   - 99flex.t will use private semaphore
   - 99dbfile.t, 99dbfilestore.t - added undef (for RT#6216)
 
-1.82_03   2007-03-12 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.82_03   2007-03-12 by Alexandr Ciornii
   - Apache::Session::Lock::File checks flock success (RT#6936)
   - Apache::Session::Lock::File will not change to shared lock if write
     lock is in effect and read lock is requested (RT#7072)

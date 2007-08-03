@@ -31,9 +31,9 @@ BEGIN {
 }
 
 sub new {
-    return undef unless $Config{d_semget};
-    return undef 
-     if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
+    return unless $Config{d_semget};
+    return
+        if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
     #Modified by Alexandr Ciornii, 2007-03-12
 
     my $class   = shift;

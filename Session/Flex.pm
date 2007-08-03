@@ -63,14 +63,14 @@ Apache::Session::Flex - Specify everything at runtime
 =head1 SYNOPSIS
 
  use Apache::Session::Flex;
- 
+
  tie %hash, 'Apache::Session::Flex', $id, {
     Store     => 'DB_File',
     Lock      => 'Null',
     Generate  => 'MD5',
     Serialize => 'Storable'
  };
- 
+
  # or
 
  tie %hash, 'Apache::Session::Flex', $id, {
@@ -79,7 +79,7 @@ Apache::Session::Flex - Specify everything at runtime
     Generate  => 'MD5',
     Serialize => 'Base64'
  };
- 
+
  # you decide!
 
 =head1 DESCRIPTION
@@ -110,7 +110,7 @@ There are many modules included in this distribution.  For each role, they are:
     Postgres
     DB_File
     File
- 
+
  Lock:
     Null
     MySQL
@@ -118,12 +118,12 @@ There are many modules included in this distribution.  For each role, they are:
 
  Generate:
     MD5
-    
+
  Serialize:
     Storable
     Base64
     UUEncode
-   
+
 In addition to the arguments needed by this module, you must provide whatever
 arguments are expected by the backing store and lock manager that you are
 using.  Please see the documentation for those modules.

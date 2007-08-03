@@ -14,29 +14,29 @@ Apache::Session - A persistence framework for session data
 =head1 SYNOPSIS
 
   use Apache::Session::MySQL;
-  
+
   my %session;
-  
+
   #make a fresh session for a first-time visitor
   tie %session, 'Apache::Session::MySQL';
 
   #stick some stuff in it
   $session{visa_number} = "1234 5678 9876 5432";
-  
+
   #get the session id for later use
   my $id = $session{_session_id};
-  
+
   #...time passes...
-  
+
   #get the session data back out again during some other request
   my %session;
   tie %session, 'Apache::Session::MySQL', $id;
-  
-  &validate($session{visa_number});
-  
+
+  validate($session{visa_number});
+
   #delete a session from the object store permanently
   tied(%session)->delete;
-  
+
 
 =head1 DESCRIPTION
 
@@ -76,7 +76,7 @@ Get a new session using DBI:
 
  tie %session, 'Apache::Session::MySQL', undef,
     { DataSource => 'dbi:mysql:sessions' };
-    
+
 Restore an old session from the database:
 
  tie %session, 'Apache::Session::MySQL', $session_id,
@@ -178,9 +178,9 @@ database access information.
  use DBI;
 
  use strict;
-  
+
  my %global_data;
- 
+
  eval {
      tie %global_data, 'Apache::Session::File', 1,
         {Directory => '/tmp/sessiondata'};
@@ -193,9 +193,9 @@ database access information.
     $global_data{username}, $global_data{password}) || die $DBI::errstr;
 
  undef %global_data;
- 
+
  #program continues...
- 
+
 As shown in this example, you should undef or untie your session hash
 as soon as you are done with it.  This will free up any locks associated
 with your process.
@@ -315,7 +315,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.83';
+$VERSION = '1.83_01';
 $VERSION = eval $VERSION;
 
 #State constants
