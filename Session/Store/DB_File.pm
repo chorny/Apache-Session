@@ -3,7 +3,7 @@
 # Apache::Session::Store::DB_File
 # Implements session object storage via Perl's DB_File module
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -100,9 +100,9 @@ Apache::Session::Store::DB_File - Use DB_File to store persistent objects
 =head1 SYNOPSIS
 
  use Apache::Session::Store::DB_File;
- 
+
  my $store = new Apache::Session::Store::DB_File;
- 
+
  $store->insert($ref);
  $store->update($ref);
  $store->materialize($ref);

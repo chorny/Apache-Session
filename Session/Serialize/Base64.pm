@@ -3,7 +3,7 @@
 # Apache::Session::Serialize::Base64
 # Serializes session objects using Storable and MIME::Base64
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -27,6 +27,7 @@ sub unserialize {
     
     my $data = thaw(decode_base64($session->{serialized}));
     die "Session could not be unserialized" unless defined $data;
+    #Storable can return undef or die for different errors
     $session->{data} = $data;
 }
 

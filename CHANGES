@@ -1,8 +1,15 @@
+1.84   2007-10-02 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - Added constant.pm to the list of prerequisites
+  - Jeffrey W. Baker, Casey West, Alexandr Ciornii, Oliver Maul agreed to
+    change license of all files to Perl license
+    Alexandr Ciornii agrees to relicense to Artistic 2.0 in future if needed.
+  - 99flex.t will be skipped on *bsd or Solaris
+
 1.83_01   2007-08-03 by Alexandr Ciornii (alexchorny AT gmail.com)
   - better handling of Storable errors by Rick Delaney (RT#27476)
 
 1.83=1.82_05  2007-05-25
-1.82_05   2007-05-14 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.82_05   2007-05-14 by Alexandr Ciornii
   - skipping part of 99flex.t on NetBSD
 
 1.82_04   2007-04-27 by Alexandr Ciornii

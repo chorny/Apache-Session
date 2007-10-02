@@ -3,7 +3,7 @@
 # Apache::Session::Store::Postgres
 # Implements session object storage via Postgres
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -111,9 +111,9 @@ Apache::Session::Store::Postgres - Store persistent data in a Postgres database
 =head1 SYNOPSIS
 
  use Apache::Session::Store::Postgres;
- 
+
  my $store = new Apache::Session::Store::Postgres;
- 
+
  $store->insert($ref);
  $store->update($ref);
  $store->materialize($ref);

@@ -3,7 +3,7 @@
 # Apache::Session::Lock::Semaphore
 # IPC Semaphore locking for Apache::Session
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -187,10 +187,10 @@ Apache::Session::Lock::Semaphore - Provides mutual exclusion through semaphores
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::Semaphore;
- 
+
  my $locker = new Apache::Session::Lock::Semaphore;
  die "no semaphores" unless $locker;
- 
+
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
  $locker->release_read_lock($ref);

@@ -3,7 +3,7 @@
 # Apache::Session::Serialize::Storable
 # Serializes session objects using Storable
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -26,6 +26,7 @@ sub unserialize {
     
     my $data = thaw $session->{serialized};
     die "Session could not be unserialized" unless defined $data;
+    #Storable can return undef or die for different errors
     $session->{data} = $data;
 }
 

@@ -3,7 +3,7 @@
 # Apache::Session::Store::Oracle
 # Implements session object storage via Oracle
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -109,9 +109,9 @@ Apache::Session::Store::Oracle - Store persistent data in a Oracle database
 =head1 SYNOPSIS
 
  use Apache::Session::Store::Oracle;
- 
+
  my $store = new Apache::Session::Store::Oracle;
- 
+
  $store->insert($ref);
  $store->update($ref);
  $store->materialize($ref);

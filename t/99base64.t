@@ -1,10 +1,9 @@
 use Test::More;
 use Test::Deep;
 
-plan skip_all => "Optional modules (MIME::Base64,Storable) not installed"
+plan skip_all => "Optional modules (MIME::Base64) not installed"
   unless eval {
                require MIME::Base64;
-               require Storable;
               };
 
 plan tests => 3;

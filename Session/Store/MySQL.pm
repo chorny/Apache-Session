@@ -3,7 +3,7 @@
 # Apache::Session::Store::MySQL
 # Implements session object storage via MySQL
 # Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -75,9 +75,9 @@ Apache::Session::Store::MySQL - Store persistent data in a MySQL database
 =head1 SYNOPSIS
 
  use Apache::Session::Store::MySQL;
- 
+
  my $store = new Apache::Session::Store::MySQL;
- 
+
  $store->insert($ref);
  $store->update($ref);
  $store->materialize($ref);

@@ -3,7 +3,7 @@
 # Apache::Session::Lock::Sybase
 # Sybase locking for Apache::Session
 # Copyright(c) 2003 Oliver Maul (oli@42.nu)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -99,9 +99,9 @@ Apache::Session::Lock::Sybase - Provides mutual exclusion using Sybase
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::Sybase;
- 
+
  my $locker = new Apache::Session::Lock::Sybase;
- 
+
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
  $locker->release_read_lock($ref);

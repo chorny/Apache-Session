@@ -9,6 +9,3 @@ of distribution. Why do anything with it, if it is not used.
 
 
 Patches welcome. Please write tests for error you found.
-
-
-Take Perl Survey (http://perlsurvey.org/) if it is open.

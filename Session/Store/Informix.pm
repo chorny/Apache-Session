@@ -3,7 +3,7 @@
 # Apache::Session::Store::Informix
 # Implements session object storage via Informix
 # Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org) and Mike Langen (mike.langen@tamedia.ch)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -109,9 +109,9 @@ Apache::Session::Store::Informix - Store persistent data in a Informix database
 =head1 SYNOPSIS
 
  use Apache::Session::Store::Informix;
- 
+
  my $store = new Apache::Session::Store::Informix;
- 
+
  $store->insert($ref);
  $store->update($ref);
  $store->materialize($ref);

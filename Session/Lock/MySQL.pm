@@ -3,7 +3,7 @@
 # Apache::Session::Lock::MySQL
 # MySQL locking for Apache::Session
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 

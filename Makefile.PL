@@ -20,6 +20,7 @@ WriteMakefile(
                      'Test::Exception' => '0.15',
                      'File::Temp'      => 0, #core from 5.6.1
                      'Storable'        => '0.6', #Will be raised later
+                     'constant'        => 0, #Available on CPAN now
 #                     'MIME::Base64'    => 0, #test
 #                     'DB_File'         => 0, #test
 #                     'Digest::MD5'     => 0, #test

@@ -3,7 +3,7 @@
 # Apache::Session::Generate::MD5;
 # Generates session identifier tokens using MD5
 # Copyright(c) 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -52,7 +52,7 @@ Apache::Session::Generate::MD5 - Use MD5 to create random object IDs
 =head1 SYNOPSIS
 
  use Apache::Session::Generate::MD5;
- 
+
  $id = Apache::Session::Generate::MD5::generate();
 
 =head1 DESCRIPTION

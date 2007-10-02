@@ -3,7 +3,7 @@
 # Apache::Session::MySQL
 # Apache persistent user sessions in a MySQL database
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -46,9 +46,9 @@ Apache::Session::MySQL - An implementation of Apache::Session
 =head1 SYNOPSIS
 
  use Apache::Session::MySQL;
- 
+
  #if you want Apache::Session to open new DB handles:
- 
+
  tie %hash, 'Apache::Session::MySQL', $id, {
     DataSource => 'dbi:mysql:sessions',
     UserName   => $db_user,

@@ -3,7 +3,7 @@
 # Apache::Session::Lock::Null
 # Pretends to provide locking for Apache::Session
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -42,9 +42,9 @@ Apache::Session::Lock::Null - Does not actually provides mutual exclusion
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::Null;
- 
+
  my $locker = new Apache::Session::Lock::Null;
- 
+
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
  $locker->release_read_lock($ref);

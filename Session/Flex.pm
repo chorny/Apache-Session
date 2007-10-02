@@ -3,7 +3,7 @@
 # Apache::Session::Flex
 # Apache persistent user sessions stored however you want
 # Copyright(c) 2000, 2001 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 

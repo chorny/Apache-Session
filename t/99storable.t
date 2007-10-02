@@ -4,10 +4,10 @@ use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 
-plan skip_all => "Optional module (Storable) not installed"
-  unless eval {
-               require Storable;
-              };
+#plan skip_all => "Optional module (Storable) not installed"
+#  unless eval {
+#               require Storable;
+#              };
 
 plan tests => 2;
 

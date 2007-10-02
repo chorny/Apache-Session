@@ -1,22 +1,21 @@
+use strict;
 use Test::More;
 use Test::Deep;
 use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
-use strict;
 use Config;
 
 plan skip_all => "Only for perl 5.8.0 or later"
   unless eval {
    require 5.8.0;
-   #perl 5.6 don't like this test. See RT#16539.
+   #perl 5.6 does not likes this test. See RT#16539.
   };
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
-plan skip_all => "Optional modules (Fcntl, Digest::MD5, Storable) not installed"
+plan skip_all => "Optional modules (Fcntl, Digest::MD5) not installed"
   unless eval {
                require Fcntl;
                require Digest::MD5;
-               require Storable;
               };
 
 plan tests => 12;
@@ -49,8 +48,8 @@ SKIP: { #Flex that uses IPC
     skip "semget not implemented",5 unless $Config{d_semget};
     skip "Cygserver is not running",5 
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
-    skip "NetBSD does not like anonymous semaphores",5 
-     if $^O =~ /netbsd/i;
+    skip "*BSD & Solaris do not like anonymous semaphores",5
+     if $^O =~ /bsd|solaris/i;
     skip "Optional modules (IPC::Semaphore, IPC::SysV, MIME::Base64, DB_File) not installed",5
      unless eval {
                require IPC::Semaphore;

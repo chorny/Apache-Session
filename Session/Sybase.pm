@@ -4,7 +4,7 @@
 # Apache persistent user sessions in a Sybase database
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
 # Modified from Apache::Session::MySQL by Chris Winters (chris@cwinters.com)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -46,7 +46,7 @@ Apache::Session::Sybase - An implementation of Apache::Session
 =head1 SYNOPSIS
 
  use Apache::Session::Sybase;
- 
+
  # if you want Apache::Session to open new DB handles:
 
  tie %hash, 'Apache::Session::Sybase', $id, {

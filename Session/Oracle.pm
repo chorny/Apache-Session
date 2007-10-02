@@ -3,7 +3,7 @@
 # Apache::Session::Oracle
 # Apache persistent user sessions in a Oracle database
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -45,9 +45,9 @@ Apache::Session::Oracle - An implementation of Apache::Session
 =head1 SYNOPSIS
 
  use Apache::Session::Oracle;
- 
+
  #if you want Apache::Session to open new DB handles:
- 
+
  tie %hash, 'Apache::Session::Oracle', $id, {
     DataSource => 'dbi:Oracle:sessions',
     UserName   => $db_user,

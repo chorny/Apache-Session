@@ -3,7 +3,7 @@
 # Apache::Session::File
 # Apache persistent user sessions in the filesystem
 # Copyright(c) 1998, 1999, 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -54,7 +54,7 @@ Apache::Session::File - An implementation of Apache::Session
 =head1 SYNOPSIS
 
  use Apache::Session::File;
- 
+
  tie %hash, 'Apache::Session::File', $id, {
     Directory => '/tmp/sessions',
     LockDirectory   => '/var/lock/sessions',

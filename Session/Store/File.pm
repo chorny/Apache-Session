@@ -3,7 +3,7 @@
 # Apache::Session::Store::File
 # Implements session object storage via flat files
 # Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 

@@ -4,7 +4,7 @@
 # Serializes session objects using Storable and packing into Sybase format
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
 # Modified from Apache::Session::Serialize::Storable by Chris Winters (chris@cwinters.com)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -42,7 +42,7 @@ Apache::Session::Serialize::Sybase - Use Storable to zip up persistent data and 
 =head1 SYNOPSIS
 
  use Apache::Session::Serialize::Sybase;
- 
+
  $zipped = Apache::Session::Serialize::Sybase::serialize($ref);
  $ref = Apache::Session::Serialize::Sybase::unserialize($zipped);
 

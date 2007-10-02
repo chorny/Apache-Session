@@ -3,7 +3,7 @@
 # Apache::Session::Lock::File
 # flock(2) locking for Apache::Session
 # Copyright(c) 1998, 1999, 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -177,9 +177,9 @@ Apache::Session::Lock::File - Provides mutual exclusion using flock
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::File;
- 
+
  my $locker = new Apache::Session::Lock::File;
- 
+
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
  $locker->release_read_lock($ref);

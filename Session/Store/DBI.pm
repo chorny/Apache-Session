@@ -3,7 +3,7 @@
 # Apache::Session::Store::DBI
 # A base class for the MySQL, Postgres, and other DBI stores
 # Copyright(c) 2000, 2004 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 

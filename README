@@ -7,7 +7,7 @@
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.6
+This is Apache::Session 1.84
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
@@ -17,7 +17,7 @@ interacts with a tied hash.
 Apache::Session is Copyright (c) 1998, 1999, 2000, 2001, 2004  Jeffrey William
 Baker <jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
 
-Apache::Session is Copyright (c) 2004 Casey West, <casey@geeknest.com>.
+Apache::Session is Copyright (c) 2004-2006 Casey West, <casey@geeknest.com>.
 Disribute under the same terms as Perl itself.
 
 PREREQUISITES
@@ -40,7 +40,7 @@ make
 make test
 make install
 
-Substitute "nmake" for "make" above if you are using Windows.
+Substitute "nmake"/"dmake" for "make" above if you are using Windows.
 
 EXAMPLE
 -------

@@ -3,7 +3,7 @@
 # Apache::Session
 # Apache persistent user sessions
 # Copyright(c) 1998, 1999, 2000, 2001, 2004 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 #############################################################################
 
@@ -315,7 +315,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.83_01';
+$VERSION = '1.84';
 $VERSION = eval $VERSION;
 
 #State constants

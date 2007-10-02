@@ -10,7 +10,7 @@
 # 
 # Modified to work with Apache::Session v 1.5+ by Chris Winters (chris@cwinters.com)
 #
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -190,9 +190,9 @@ Apache::Session::Store::Sybase - Store persistent data in a Sybase database
 =head1 SYNOPSIS
 
  use Apache::Session::Store::Sybase;
- 
+
  my $store = new Apache::Session::Store::MySQL;
- 
+
  $store->insert( $ref );
  $store->update( $ref );
  $store->materialize( $ref );

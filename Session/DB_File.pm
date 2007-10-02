@@ -3,7 +3,7 @@
 # Apache::Session::DB_File
 # A wrapper class
 # Copyright(c) 2000 Jeffrey William Baker (jwbaker@acm.org)
-# Distribute under the Artistic License
+# Distribute under the Perl License
 #
 ############################################################################
 
@@ -45,7 +45,7 @@ Apache::Session::DB_File - An implementation of Apache::Session
 =head1 SYNOPSIS
 
  use Apache::Session::DB_File;
- 
+
  tie %hash, 'Apache::Session::DB_File', $id, {
     FileName      => 'sessions.db',
     LockDirectory => '/var/lock/sessions',
