@@ -1,11 +1,24 @@
+In some distant future Apache::Session may require perl 5.6.
+If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
+and tell me what version do you use, why and will you need newer versions
+of Apache::Session.
+
+1.84_01   2007-11-26 by Alexandr Ciornii (alexchorny AT gmail.com)
+  - Added Apache::Session::Lock::Semaphore::remove to remove semaphore
+  - 99flex.t will remove semaphore (RT#30440)
+  - 99flex.t should work on 5.6.1 again (no chdir now)
+  - 99flex.t will clean all temporary files (RT#30209)
+  - pod.t included in MANIFEST
+  - cleaner tests
+
 1.84   2007-10-02 by Alexandr Ciornii (alexchorny AT gmail.com)
   - Added constant.pm to the list of prerequisites
   - Jeffrey W. Baker, Casey West, Alexandr Ciornii, Oliver Maul agreed to
     change license of all files to Perl license
     Alexandr Ciornii agrees to relicense to Artistic 2.0 in future if needed.
-  - 99flex.t will be skipped on *bsd or Solaris
+  - 99flex.t will be skipped on *bsd and Solaris
 
-1.83_01   2007-08-03 by Alexandr Ciornii (alexchorny AT gmail.com)
+1.83_01   2007-08-03 by Alexandr Ciornii
   - better handling of Storable errors by Rick Delaney (RT#27476)
 
 1.83=1.82_05  2007-05-25

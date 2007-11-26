@@ -61,4 +61,5 @@ t/99postgres.t
 t/99semaphore.t
 t/99storable.t
 t/99uue.t
+t/pod.t
 TODO

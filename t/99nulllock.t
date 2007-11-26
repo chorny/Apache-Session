@@ -1,6 +1,4 @@
 use Test::More;
-use Test::Deep;
-use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 

@@ -15,7 +15,7 @@ use IPC::SysV qw(IPC_PRIVATE IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
 use vars qw($VERSION);
 
-$VERSION = '1.02';
+$VERSION = '1.02_01';
 
 BEGIN {
 
@@ -173,6 +173,13 @@ sub hash {
     my $hash = 0;
 
 
+}
+
+sub remove {
+    my $self    = shift;
+    if ($self->{sem}) {    
+        $self->{sem}->remove();
+    }
 }
 
 1;

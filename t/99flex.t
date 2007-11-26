@@ -1,16 +1,15 @@
 use strict;
 use Test::More;
-use Test::Deep;
-use Test::Exception;
+#use Test::Exception;
 use File::Temp qw[tempdir];
 use Cwd qw[getcwd];
 use Config;
 
-plan skip_all => "Only for perl 5.8.0 or later"
-  unless eval {
-   require 5.8.0;
+#plan skip_all => "Only for perl 5.8 or later"
+#  unless eval {
+#   require 5.008;
    #perl 5.6 does not likes this test. See RT#16539.
-  };
+#  };
 #use Module::Mask;my $mask = new Module::Mask ('Storable');
 plan skip_all => "Optional modules (Fcntl, Digest::MD5) not installed"
   unless eval {
@@ -25,8 +24,8 @@ use_ok $package;
 
 #$Apache::Session::Lock::File::LockDirectory=$tempdir;
 my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-my $origdir = getcwd;
-chdir( $tempdir );
+#my $origdir = getcwd;
+#chdir( $tempdir );
 
 {
     my $session = tie my %session, $package, undef, {
@@ -34,14 +33,16 @@ chdir( $tempdir );
         Lock      => 'File',
         Generate  => 'MD5',
         Serialize => 'Storable',
-#        Directory     => $tempdir,
-#        LockDirectory => $tempdir,
+        Directory     => $tempdir,
+        LockDirectory => $tempdir,
     };
     isa_ok $session->{object_store}, 'Apache::Session::Store::File';
     isa_ok $session->{lock_manager}, 'Apache::Session::Lock::File';
     is ref($session->{generate}),    'CODE', 'generate is CODE';
     is ref($session->{serialize}),   'CODE', 'serialize is CODE';
     is ref($session->{unserialize}), 'CODE', 'unserialize is CODE';
+    tied(%session)->delete;
+    #untie %session;
 }
 
 SKIP: { #Flex that uses IPC
@@ -75,6 +76,7 @@ SKIP: { #Flex that uses IPC
     is ref($session->{generate}),    'CODE', 'generate is CODE';
     is ref($session->{serialize}),   'CODE', 'serialize is CODE';
     is ref($session->{unserialize}), 'CODE', 'unserialize is CODE';
+    $session->{lock_manager}->remove();
 }
 
 {
@@ -117,8 +119,12 @@ SKIP: { #Flex that uses IPC
         Lock      => 'Test',
         Generate  => 'Test',
         Serialize => 'Test',
+        Directory     => $tempdir,
+        LockDirectory => $tempdir,
     };
     isa_ok $session->{object_store}, 'Apache::Session::Store::Test';
+    tied(%session)->delete;
+    $session->{lock_manager}->clean('.', 0);
 }
 
-chdir( $origdir );
+#chdir( $origdir );
