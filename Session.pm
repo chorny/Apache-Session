@@ -56,7 +56,7 @@ Storable, and optionally ASCII-fied via MIME or pack().  ID numbers are
 generated via MD5.  The reader is encouraged to extend these capabilities to
 meet his own requirements.
 
-A derived class of Apache::Session is used to tie together the three
+A derived class of Apache::Session is used to tie together the three following
 components.  The derived class inherits the interface from Apache::Session, and
 specifies which store and locker classes to use.  Apache::Session::MySQL, for
 instance, uses the MySQL storage class and also the MySQL locking class. You
@@ -94,7 +94,7 @@ Hey, how much easier could it get?
 =head2 Reading the session ID
 
 The session ID is the only magic entry in the session object,
-but anything beginning with a "_" is considered reserved for
+but anything beginning with an "_" is considered reserved for
 future use.
 
  my $id = $session{_session_id};
@@ -110,7 +110,7 @@ you would expect.  When you create a new session, Session immediately
 saves the session to the data store, or calls die() if it cannot.  It
 also obtains an exclusive lock on the session object.  If you retrieve
 an existing session, Session immediately restores the object from storage,
-or calls die() in case of an error.  Session also obtains an non-exclusive
+or calls die() in case of an error.  Session also obtains a non-exclusive
 lock on the session.
 
 As you put data into the session hash, Session squirrels it away for
@@ -168,7 +168,7 @@ some session handling basics.
 
 When you share data between Apache processes, you need to decide on a
 session ID number ahead of time and make sure that an object with that
-ID number is in your object store before starting you Apache.  How you
+ID number is in your object store before starting your Apache.  How you
 accomplish that is your own business.  I use the session ID "1".  Here
 is a short program in which we use Apache::Session to store out 
 database access information.
@@ -319,7 +319,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.85';
+$VERSION = '1.85_01';
 $VERSION = eval $VERSION;
 
 #State constants

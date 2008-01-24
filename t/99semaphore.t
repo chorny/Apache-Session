@@ -1,7 +1,7 @@
 use Test::More;
 use Test::Exception;
 use File::Temp qw[tempdir];
-use Cwd qw[getcwd];
+#use Cwd qw[getcwd];
 use Config;
 
 BEGIN {
@@ -17,7 +17,7 @@ BEGIN {
   if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
 }
 
-plan tests => 29;
+plan tests => 33;
 
 my $package = 'Apache::Session::Lock::Semaphore';
 use_ok $package;
@@ -28,6 +28,7 @@ use_ok $package;
 
 use IPC::SysV qw(IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
+diag("IPC::Semaphore version $IPC::Semaphore::VERSION");
 
 my $semkey = int(rand(2**15-1));
 
@@ -45,6 +46,7 @@ for my $iter (2,4,6,8) {
 
     $locker->acquire_read_lock($session);
     my $semnum = $locker->{read_sem};
+    ok(defined($semnum),'$locker->{read_sem} is defined');
 
     my $sem = IPC::Semaphore->new($semkey, $number++, S_IRWXU);
 

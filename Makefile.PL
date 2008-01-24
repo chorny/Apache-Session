@@ -1,4 +1,5 @@
-use 5.002; #Symbol.pm
+use 5.003_07; #earliest version on CPAN
+#Symbol.pm requires 5.002
 use ExtUtils::MakeMaker;
 
 print << 'EOT';
@@ -26,7 +27,7 @@ WriteMakefile(
                      'constant'        => 0, #Available on CPAN now
 #                     'MIME::Base64'    => 0, #new versions require 5.6
 #                     'DB_File'         => 0, #test
-#                     'Digest::MD5'     => 0, #new versions requires 5.6
+#                     'Digest::MD5'     => 0, #new versions require 5.6
                     },
     AUTHOR          => 'Casey West <casey[at]geeknest.com>',
     ABSTRACT        => 'A persistence framework for session data',

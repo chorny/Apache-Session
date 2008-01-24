@@ -14,7 +14,7 @@ use strict;
 use DBI;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub new {
     my $class = shift;
@@ -52,6 +52,7 @@ sub acquire_read_lock  {
     
     my $sth = $self->{dbh}->prepare_cached(q{SELECT GET_LOCK(?, 3600)}, {}, 1);
     $sth->execute($self->{lockid});
+    $sth->finish();
     
     $self->{lock} = 1;
 }
@@ -68,6 +69,7 @@ sub release_read_lock {
         
         my $sth = $self->{dbh}->prepare_cached(q{SELECT RELEASE_LOCK(?)}, {}, 1);
         $sth->execute($self->{lockid});
+        $sth->finish();
         
         $self->{lock} = 0;
     } 
@@ -102,9 +104,9 @@ Apache::Session::Lock::MySQL - Provides mutual exclusion using MySQL
 =head1 SYNOPSIS
 
  use Apache::Session::Lock::MySQL;
- 
- my $locker = new Apache::Session::Lock::MySQL;
- 
+
+ my $locker = Apache::Session::Lock::MySQL->new();
+
  $locker->acquire_read_lock($ref);
  $locker->acquire_write_lock($ref);
  $locker->release_read_lock($ref);
