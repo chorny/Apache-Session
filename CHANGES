@@ -3,8 +3,10 @@ If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
 and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
+1.86   2008-02-01 by Alexandr Ciornii
+  - Default number of semaphores for *BSD is 8 in Apache::Session::Lock::Semaphore
+
 1.85_01   2008-01-24 by Alexandr Ciornii
-  - Default number of semaphores for FreeBSD is 8 in Apache::Session::Lock::Semaphore
   - typos corrected (catched by Gerald Fox)
   - more tests and diag in 99semaphore.t
   - no warning "disconnect invalidates 2 active statement" in

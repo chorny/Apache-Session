@@ -15,14 +15,14 @@ use IPC::SysV qw(IPC_PRIVATE IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
 use vars qw($VERSION);
 
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 BEGIN {
 
     if ($Config{'osname'} eq 'linux') {
         #More semaphores on Linux means less lock contention
         $Apache::Session::Lock::Semaphore::nsems = 32;
-    } elsif ($Config{'osname'} eq 'freebsd') {
+    } elsif ($Config{'osname'}=~/bsd/i) {
         $Apache::Session::Lock::Semaphore::nsems = 8; #copied from IPC::Semaphore/sem.t minus 1
     } else {
         $Apache::Session::Lock::Semaphore::nsems = 16;
