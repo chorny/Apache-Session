@@ -13,6 +13,7 @@ use strict;
 use Config;
 use IPC::SysV qw(IPC_PRIVATE IPC_CREAT S_IRWXU SEM_UNDO);
 use IPC::Semaphore;
+use Carp qw/croak confess/;
 use vars qw($VERSION);
 
 $VERSION = '1.04';
@@ -63,9 +64,9 @@ sub acquire_read_lock  {
     return if $self->{write};
 
     if (!$self->{sem}) {    
-        $self->{sem} = new IPC::Semaphore(
+        $self->{sem} = IPC::Semaphore->new(
             defined($self->{sem_key})?$self->{sem_key}:IPC_PRIVATE, $self->{nsems},
-            IPC_CREAT | S_IRWXU) || die "Cannot create semaphore with key $self->{sem_key}: $!";
+            IPC_CREAT | S_IRWXU) || confess("Cannot create semaphore with key $self->{sem_key}; NSEMS: $self->{nsems}: $!");
     }
     
     if (!defined $self->{read_sem}) {
@@ -101,9 +102,9 @@ sub acquire_write_lock {
     return if($self->{write});
 
     if (!$self->{sem}) {
-        $self->{sem} = new IPC::Semaphore(
+        $self->{sem} = IPC::Semaphore->new(
             defined($self->{sem_key})?$self->{sem_key}:IPC_PRIVATE, $self->{nsems},
-            IPC_CREAT | S_IRWXU) || die "Cannot create semaphore with key $self->{sem_key}: $!";
+            IPC_CREAT | S_IRWXU) || confess "Cannot create semaphore with key $self->{sem_key}; NSEMS: $self->{nsems}: $!";
     }
     
     if (!defined $self->{read_sem}) {

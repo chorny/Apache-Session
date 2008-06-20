@@ -47,6 +47,7 @@ my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
 
 SKIP: { #Flex that uses IPC
     skip "semget not implemented",5 unless $Config{d_semget};
+    skip "semctl not implemented",5 unless $Config{d_semctl};
     skip "Cygserver is not running",5 
      if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
     skip "*BSD & Solaris do not like anonymous semaphores",5

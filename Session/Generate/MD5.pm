@@ -13,7 +13,7 @@ use strict;
 use vars qw($VERSION);
 use Digest::MD5;
 
-$VERSION = '2.1';
+$VERSION = '2.11';
 
 sub generate {
     my $session = shift;
@@ -37,7 +37,7 @@ sub validate {
     my $session = shift;
     
     if ($session->{data}->{_session_id} !~ /^[a-fA-F0-9]+$/) {
-        die;
+        die "Invalid session ID: ".$session->{data}->{_session_id};
     }
 }
 

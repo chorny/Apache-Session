@@ -256,6 +256,10 @@ Catalyst::Plugin::Session - support of sessions in Catalyst
 
 Session - OO interface to Apache::Session
 
+=head1 LICENSE
+
+Same as Perl.
+
 =head1 AUTHORS
 
 Jeffrey Baker <jwbaker@acm.org> is the author of 
@@ -319,7 +323,7 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.86';
+$VERSION = '1.86_01';
 $VERSION = eval $VERSION;
 
 #State constants

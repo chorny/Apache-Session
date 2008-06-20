@@ -7,12 +7,15 @@
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.84
+This is Apache::Session 1.86
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
 abstracted to make all backing stores behave alike.  The programmer simply
 interacts with a tied hash.
+
+COPYRIGHT AND LICENSE
+---------------------
 
 Apache::Session is Copyright (c) 1998, 1999, 2000, 2001, 2004  Jeffrey William
 Baker <jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
@@ -23,8 +26,10 @@ Disribute under the same terms as Perl itself.
 PREREQUISITES
 -------------
 
-No particular modules are required, but most of Apache::Session's functions
-require Digest::MD5 and Storable.
+Required for testing: Test::More, Test::Deep, Test::Exception, File::Temp
+Required for work: Storable, constant
+
+Most of Apache::Session's functions require Digest::MD5.
 
 If you wish to use the DBI backing stores, you need the latest version of DBI
 and the driver for your database.  Currently MySQL, Postgres, and Oracle are
@@ -32,9 +37,14 @@ supported.
 
 INSTALLATION
 ------------
+Auto
+Use CPAN's or CPANPLUS's shell.
 
-tar -xvzf Apache-Session-1.6.tar.gz
-cd Apache-Session-1.6
+Manual:
+
+
+tar -xvzf Apache-Session-1.86.tar.gz
+cd Apache-Session-1.86
 perl Makefile.PL
 make
 make test

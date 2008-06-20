@@ -1,11 +1,14 @@
+use strict;
 use Test::More;
-use Test::Exception;
+#use Test::Exception;
 use File::Temp qw[tempdir];
 #use Cwd qw[getcwd];
 use Config;
 
 BEGIN {
  plan skip_all => "semget not implemented" unless $Config{d_semget};
+ plan skip_all => "semctl not implemented" unless $Config{d_semctl};
+ 
  #Darwin may not have semaphores, see
  #http://sysnet.ucsd.edu/~bellardo/darwin/sysvsem.html
  plan skip_all => "Optional modules (IPC::SysV, IPC::Semaphore) not installed"
@@ -17,7 +20,7 @@ BEGIN {
   if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
 }
 
-plan tests => 33;
+plan tests => 37;
 
 my $package = 'Apache::Session::Lock::Semaphore';
 use_ok $package;
@@ -49,6 +52,7 @@ for my $iter (2,4,6,8) {
     ok(defined($semnum),'$locker->{read_sem} is defined');
 
     my $sem = IPC::Semaphore->new($semkey, $number++, S_IRWXU);
+    diag("NSems: $iter, error: $!") unless defined($sem);
 
     isa_ok $sem, 'IPC::Semaphore';
 

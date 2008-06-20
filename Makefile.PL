@@ -1,5 +1,7 @@
-use 5.003_07; #earliest version on CPAN
-#Symbol.pm requires 5.002
+use 5.002; #Symbol.pm requires 5.002
+#5.004 almost 11 years ago
+#5.003_07 earliest version on CPAN
+
 use ExtUtils::MakeMaker;
 
 print << 'EOT';
@@ -8,15 +10,20 @@ print << 'EOT';
 Please use Test::Reporter to report test results - it's the only way to measure
 popularity of distribution.
 
-If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
-and tell me what version do you use, and why.
-
 EOT
+
+if ($]<5.006) {
+  print << 'EOT1';
+If you really use perl older than 5.6 - write to alexchorny[AT]gmail.com
+and tell me what version do you use, and why.
+EOT1
+  prompt('continue','y');
+}
 
 WriteMakefile(
     NAME         => "Apache::Session",
     VERSION_FROM => "Session.pm",
-    ($ExtUtils::MakeMaker::VERSION gt '6.30'? 
+    ($ExtUtils::MakeMaker::VERSION ge '6.31'? 
      ('LICENSE'		=> 'perl', ) : ()),
     PREREQ_PM    => {
                      'Test::More'      => '0.47',
