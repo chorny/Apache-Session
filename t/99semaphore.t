@@ -20,7 +20,7 @@ BEGIN {
   if $^O eq 'cygwin' && (!exists $ENV{'CYGWIN'} || $ENV{'CYGWIN'} !~ /server/i);
 }
 
-plan tests => 37;
+plan tests => 33;
 
 my $package = 'Apache::Session::Lock::Semaphore';
 use_ok $package;

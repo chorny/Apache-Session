@@ -3,6 +3,9 @@ If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
 and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
+1.86_02   2008-06-27 by Alexandr Ciornii
+  - correct number of tests in 99semaphore.t
+
 1.86_01   2008-06-20 by Alexandr Ciornii
   - use Carp::confess in Apache::Session::Lock::Semaphore
   - more info in die message in Apache::Session::Generate::MD5 (RT#36412, by Knut Arne Bjorndal)
