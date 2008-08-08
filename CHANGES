@@ -3,6 +3,7 @@ If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
 and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
+1.87=1.86_03   2008-08-08
 1.86_03   2008-08-03 by Alexandr Ciornii
   - disabled 99semaphore.t. Help needed.
 
