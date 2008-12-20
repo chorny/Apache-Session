@@ -1,5 +1,5 @@
 use 5.002; #Symbol.pm requires 5.002
-#5.004 almost 11 years ago
+#5.004 almost 11 years ago, earliest version supported by perlver
 #5.003_07 earliest version on CPAN
 
 use ExtUtils::MakeMaker;
@@ -25,10 +25,12 @@ WriteMakefile(
     VERSION_FROM => "Session.pm",
     ($ExtUtils::MakeMaker::VERSION ge '6.31'? 
      ('LICENSE'		=> 'perl', ) : ()),
+    ($ExtUtils::MakeMaker::VERSION ge '6.48'? 
+     ('MIN_PERL_VERSION' => 5.002,) : ()),
     PREREQ_PM    => {
-                     'Test::More'      => '0.47',
-                     'Test::Deep'      => '0.082',
-                     'Test::Exception' => '0.15',
+                     'Test::More'      => '0.47', #Build
+                     'Test::Deep'      => '0.082', #Build
+                     'Test::Exception' => '0.15', #Build
                      'File::Temp'      => 0, #core from 5.6.1
                      'Storable'        => '0.6', #Will be raised later
                      'constant'        => 0, #Available on CPAN now

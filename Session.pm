@@ -323,13 +323,13 @@ package Apache::Session;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.87';
+$VERSION = '1.88';
 $VERSION = eval $VERSION;
 
 #State constants
 #
 #These constants are used in a bitmask to store the
-#object's status.  New indicates that the object 
+#object's status.  New indicates that the object
 #has not yet been inserted into the object store.
 #Modified indicates that a member value has been
 #changed.  Deleted is set when delete() is called.
@@ -407,9 +407,9 @@ sub TIEHASH {
     if (defined $session_id  && $session_id) {
         
         #check the session ID for remote exploitation attempts
-        #this will die() on suspicious session IDs.        
+        #this will die() on suspicious session IDs.
 
-        &{$self->{validate}}($self);        
+        &{$self->{validate}}($self);
         
         if (exists $args->{Transaction} && $args->{Transaction}) {
             $self->acquire_write_lock;

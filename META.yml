@@ -1,19 +1,26 @@
 --- #YAML:1.0
-name:                Apache-Session
-version:             1.87
-abstract:            A persistence framework for session data
-license:             perl
-generated_by:        ExtUtils::MakeMaker version 6.32
-distribution_type:   module
-requires:     
-    constant:                      0
-    File::Temp:                    0
-    Storable:                      0.6
-    Test::Deep:                    0.082
-    Test::Exception:               0.15
-    Test::More:                    0.47
-meta-spec:
-    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
-    version: 1.2
+name:               Apache-Session
+version:            1.88
+abstract:           A persistence framework for session data
 author:
     - Casey West <casey[at]geeknest.com>
+license:            perl
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+requires:
+    constant:         0
+    File::Temp:       0
+    perl:             5.002
+    Storable:         0.6
+    Test::Deep:       0.082
+    Test::Exception:  0.15
+    Test::More:       0.47
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.48
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

@@ -1,5 +1,4 @@
-If you want better support for older Perls, use Test::Reporter.
-CPAN::Reporter is also required if you are using CPAN shell.
+If you want better support for older Perls, use CPAN::Reporter (Test::Reporter for CPANPLUS).
 Also you can run cpan smoking. That way module can be fixed even before
 you'll find that you need it. See CPAN::YACSmoke.
 
