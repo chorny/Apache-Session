@@ -23,10 +23,16 @@ EOT1
 WriteMakefile(
     NAME         => "Apache::Session",
     VERSION_FROM => "Session.pm",
-    ($ExtUtils::MakeMaker::VERSION ge '6.31'? 
-     ('LICENSE'		=> 'perl', ) : ()),
     ($ExtUtils::MakeMaker::VERSION ge '6.48'? 
-     ('MIN_PERL_VERSION' => 5.002,) : ()),
+     (MIN_PERL_VERSION => 5.002,
+      META_MERGE => {
+        resources=> {
+          repository => 'https://apache-session.svn.sourceforge.net/svnroot/apache-session',
+        },
+        keywords => ['CGI','session','web'],
+      },
+      'LICENSE'		=> 'perl',
+     ) : ()),
     PREREQ_PM    => {
                      'Test::More'      => '0.47', #Build
                      'Test::Deep'      => '0.082', #Build
