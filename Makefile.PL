@@ -27,7 +27,7 @@ WriteMakefile(
      (MIN_PERL_VERSION => 5.002,
       META_MERGE => {
         resources=> {
-          repository => 'https://apache-session.svn.sourceforge.net/svnroot/apache-session',
+          repository => 'http://github.com/chorny/Apache-Session',
         },
         keywords => ['CGI','session','web'],
       },
