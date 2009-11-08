@@ -258,7 +258,7 @@ Session - OO interface to Apache::Session
 
 =head1 LICENSE
 
-Same as Perl.
+Under the same terms as Perl itself.
 
 =head1 AUTHORS
 
