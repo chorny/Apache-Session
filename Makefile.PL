@@ -1,4 +1,5 @@
-use 5.002; #Symbol.pm requires 5.002
+use 5.005; #VERSION_FROM in Makefile.PL
+#Symbol.pm requires 5.002
 #5.004 almost 11 years ago, earliest version supported by perlver
 #5.003_07 earliest version on CPAN
 
@@ -24,7 +25,7 @@ WriteMakefile(
     NAME         => "Apache::Session",
     VERSION_FROM => "Session.pm",
     ($ExtUtils::MakeMaker::VERSION ge '6.48'? 
-     (MIN_PERL_VERSION => 5.002,
+     (MIN_PERL_VERSION => 5.005,
       META_MERGE => {
         resources=> {
           repository => 'http://github.com/chorny/Apache-Session',
