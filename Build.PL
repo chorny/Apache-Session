@@ -26,7 +26,8 @@ my $build = Module::Build->new(
     'perl' => '5.005',
     'File::Temp' => 0,
     'Storable' => '0.6',
-    'constant' => 0
+    'constant' => 0,
+    'Digest::MD5' => 0,
   },
   'dist_version_from' => 'Session.pm'
 );

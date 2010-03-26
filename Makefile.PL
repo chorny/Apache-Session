@@ -40,7 +40,7 @@ WriteMakefile(
                      'constant'        => 0, #Available on CPAN now
 #                     'MIME::Base64'    => 0, #new versions require 5.6
 #                     'DB_File'         => 0, #test
-#                     'Digest::MD5'     => 0, #new versions require 5.6
+                     'Digest::MD5'     => 0,
                     },
     BUILD_REQUIRES => {
                      'Test::More'      => '0.47', #Build
