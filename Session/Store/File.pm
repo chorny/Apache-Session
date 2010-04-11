@@ -85,8 +85,8 @@ sub materialize {
         }
         
         my $fh = $self->{fh};
-        while (<$fh>) {
-            $session->{serialized} .= $_;
+        while (my $line = <$fh>) {
+            $session->{serialized} .= $line;
         }
     }
     else {
