@@ -17,7 +17,7 @@ plan skip_all => "Optional modules (Fcntl, Digest::MD5) not installed"
                require Digest::MD5;
               };
 
-plan tests => 12;
+plan tests => 7;
 
 my $package = 'Apache::Session::Flex';
 use_ok $package;
@@ -45,6 +45,7 @@ my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
     #untie %session;
 }
 
+=for cmt
 SKIP: { #Flex that uses IPC
     skip "semget not implemented",5 unless $Config{d_semget};
     skip "semctl not implemented",5 unless $Config{d_semctl};
@@ -60,6 +61,7 @@ SKIP: { #Flex that uses IPC
                require DB_File;
               };
 
+    diag( "Using IPC::Semaphore $IPC::Semaphore::VERSION, IPC::SysV $IPC::SysV::VERSION, DB_File $DB_File::VERSION" );
     require Apache::Session::Lock::Semaphore;
     $Apache::Session::Lock::Semaphore::sem_key=undef;
     $Apache::Session::Lock::Semaphore::sem_key=$Apache::Session::Lock::Semaphore::sem_key;
@@ -79,6 +81,7 @@ SKIP: { #Flex that uses IPC
     is ref($session->{unserialize}), 'CODE', 'unserialize is CODE';
     $session->{lock_manager}->remove();
 }
+=cut
 
 {
     {

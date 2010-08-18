@@ -4,6 +4,7 @@ and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
   - require Digest::MD5
+  - all semaphore tests were removed
 
 1.88   2008-12-20  by Alexandr Ciornii
   - Apache::Session::Generate::MD5::validate will untaint data
