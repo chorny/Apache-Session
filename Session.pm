@@ -89,7 +89,7 @@ Hey, how much easier could it get?
 
  $session{first_name} = "Chuck";
  $session{an_array_ref} = [ $one, $two, $three ];
- $session{an_object} = new Some::Class;
+ $session{an_object} = Some::Class->new;
 
 =head2 Reading the session ID
 
