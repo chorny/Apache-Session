@@ -23,7 +23,7 @@ EOT1
 
 WriteMakefile1(
     NAME         => "Apache::Session",
-    VERSION_FROM => "Session.pm",
+    VERSION_FROM => "lib/Apache/Session.pm",
     MIN_PERL_VERSION => 5.005,
     META_MERGE => {
       resources=> {

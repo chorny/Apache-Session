@@ -46,7 +46,7 @@ my $build = Module::Build->new(
     'constant' => 0,
     'Digest::MD5' => 0,
   },
-  'dist_version_from' => 'Session.pm',
+  'dist_version_from' => 'lib/Apache/Session.pm',
   'auto_configure_requires' => 0,
 );
 
