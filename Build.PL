@@ -45,6 +45,7 @@ my $build = Module::Build->new(
     'Storable' => '0.6',
     'constant' => 0,
     'Digest::MD5' => 0,
+    'IO::File' => 0,
   },
   'dist_version_from' => 'lib/Apache/Session.pm',
   'auto_configure_requires' => 0,

@@ -38,7 +38,8 @@ WriteMakefile1(
                      'constant'        => 0, #Available on CPAN now
 #                     'MIME::Base64'    => 0, #new versions require 5.6
 #                     'DB_File'         => 0, #test
-                     'Digest::MD5'     => 0,
+                     'Digest::MD5'     => 0, #core from 5.8
+                     'IO::File'        => 0, #core
                     },
     BUILD_REQUIRES => {
                      'Test::More'      => '0.47', #Build

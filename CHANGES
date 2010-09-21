@@ -5,6 +5,8 @@ of Apache::Session.
 
   - require Digest::MD5
   - all semaphore tests were removed
+  - Apache::Session::Store::File::materialize should not append to $session->{serialized}
+  - Apache::Session::Store::File will flush after writing to file
 
 1.88   2008-12-20  by Alexandr Ciornii
   - Apache::Session::Generate::MD5::validate will untaint data
