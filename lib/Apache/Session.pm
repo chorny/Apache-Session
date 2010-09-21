@@ -262,6 +262,8 @@ Under the same terms as Perl itself.
 
 =head1 AUTHORS
 
+Alexandr Ciornii, L<http://chorny.net> - current maintainer
+
 Jeffrey Baker <jwbaker@acm.org> is the author of 
 Apache::Session.
 
