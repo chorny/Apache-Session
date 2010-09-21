@@ -2,6 +2,23 @@ use strict;
 use Module::Build;
 #created by eumm-migrate.pl
 
+print << 'EOT';
+
+*** REQUEST ***
+Please use Test::Reporter to report test results - it's the only way to measure
+popularity of distribution.
+
+EOT
+
+if ($]<5.006) {
+  print << 'EOT1';
+If you really use perl older than 5.6 - write to alexchorny[AT]gmail.com
+and tell me what version do you use, and why.
+EOT1
+  Module::Build->prompt('continue','y');
+}
+
+
 my $build = Module::Build->new(
   'dist_abstract' => 'A persistence framework for session data',
   'license' => 'perl',
@@ -29,7 +46,8 @@ my $build = Module::Build->new(
     'constant' => 0,
     'Digest::MD5' => 0,
   },
-  'dist_version_from' => 'Session.pm'
+  'dist_version_from' => 'Session.pm',
+  'auto_configure_requires' => 0,
 );
 
 $build->create_build_script();
