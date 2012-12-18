@@ -80,6 +80,7 @@ sub materialize {
     my $results = $self->{materialize_sth}->fetchrow_arrayref;
 
     if (!(defined $results)) {
+        $self->{materialize_sth}->finish;
         die "Object does not exist in the data store";
     }
 
