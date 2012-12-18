@@ -1,35 +1,56 @@
 use Test::More;
 use Test::Deep;
-use Test::Exception;
+#use Test::Exception;
 use File::Temp qw[tempdir];
-use Cwd qw[getcwd];
+#use Cwd qw[getcwd];
 
-plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless $ENV{APACHE_SESSION_MAINTAINER};
-plan skip_all => "Optional modules (DBD::mysql, DBI) not installed"
+#plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+#  unless $ENV{APACHE_SESSION_MAINTAINER};
+plan skip_all => "Optional modules (DBD::mysql, DBI, Test::Database) not installed"
   unless eval {
-               require DBI;
+               require Test::Database;
                require DBD::mysql;
+               require DBI;
               };
+
+my @db_handles = Test::Database->handles('mysql');
+
+plan skip_all => "No mysql handle reported by Test::Database"
+  unless @db_handles;
 
 plan tests => 13;
 
 my $package = 'Apache::Session::MySQL';
 use_ok $package;
 
-#my $origdir = getcwd;
-#my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-#chdir( $tempdir );
+my $mysql = $db_handles[0];
+my $dsn = $mysql->dsn();
+my $uname = $mysql->username();
+my $upass = $mysql->password();
+diag "Mysql version ".$mysql->driver->version;
+
+{
+    my $dbh = $mysql->dbh();
+    foreach my $table (qw/sessions s/) {
+        $dbh->do("DROP TABLE IF EXISTS $table");
+        $dbh->do(<<"EOT");
+  CREATE TABLE $table (
+    id char(32) not null primary key,
+    a_session text
+  );
+EOT
+    }
+}
 
 my $session = {};
 
 tie %{$session}, $package, undef, {
-    DataSource     => 'dbi:mysql:sessions', 
-    UserName       => 'test', 
-    Password       => '',
-    LockDataSource => 'dbi:mysql:sessions',
-    LockUserName   => 'test',
-    LockPassword   => ''
+    DataSource     => $dsn,
+    UserName       => $uname,
+    Password       => $upass,
+    LockDataSource => $dsn,
+    LockUserName   => $uname,
+    LockPassword   => $upass,
 };
 
 ok tied(%{$session}), 'session tied';
@@ -46,12 +67,12 @@ undef $session;
 $session = {};
 
 tie %{$session}, $package, $id, {
-    DataSource     => 'dbi:mysql:sessions', 
-    UserName       => 'test', 
-    Password       => '',
-    LockDataSource => 'dbi:mysql:sessions',
-    LockUserName   => 'test',
-    LockPassword   => ''
+    DataSource     => $dsn,
+    UserName       => $uname,
+    Password       => $upass,
+    LockDataSource => $dsn,
+    LockUserName   => $uname,
+    LockPassword   => $upass,
 };
 
 ok tied(%{$session}), 'session tied';
@@ -66,13 +87,13 @@ undef $session;
 $session = {};
 
 tie %{$session}, $package, undef, {
-    DataSource     => 'dbi:mysql:sessions', 
-    UserName       => 'test', 
-    Password       => '',
     TableName      => 's',
-    LockDataSource => 'dbi:mysql:sessions',
-    LockUserName   => 'test',
-    LockPassword   => ''
+    DataSource     => $dsn,
+    UserName       => $uname,
+    Password       => $upass,
+    LockDataSource => $dsn,
+    LockUserName   => $uname,
+    LockPassword   => $upass,
 };
 
 ok tied(%{$session}), 'session tied';
@@ -83,7 +104,7 @@ untie %{$session};
 undef $session;
 $session = {};
 
-my $dbh = DBI->connect('dbi:mysql:sessions', 'test', '', {RaiseError => 1});
+my $dbh = DBI->connect($dsn, $uname, $upass, {RaiseError => 1});
 
 tie %{$session}, $package, $id, {
     Handle     => $dbh,
@@ -100,5 +121,3 @@ cmp_deeply $session->{baz}, $baz, "Baz matches";
 tied(%{$session})->delete;
 untie %{$session};
 $dbh->disconnect;
-
-#chdir( $origdir );
