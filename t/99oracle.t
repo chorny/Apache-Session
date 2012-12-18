@@ -1,8 +1,8 @@
 use Test::More;
 use Test::Deep;
 
-#plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-#  unless $ENV{APACHE_SESSION_MAINTAINER};
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 plan skip_all => "Optional modules (DBD::Oracle, DBI) not installed"
   unless eval {
                require DBD::Oracle;
@@ -21,7 +21,7 @@ my $user = $ENV{AS_ORACLE_USER};
 my $pass = $ENV{AS_ORACLE_PASS};
 {
     my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError => 1, AutoCommit => 1, PrintError=>0, });
-    foreach my $table (qw/sessions/) {
+    foreach my $table (qw/sessions_perl/) {
         eval { $dbh->do("DROP TABLE $table", {RaiseError => 0, PrintError=>0, });};
         $dbh->do(<<"EOT");
  CREATE TABLE $table (
@@ -36,7 +36,8 @@ tie %{$session}, $package, undef, {
     DataSource => $dsn,
     UserName => $user,
     Password => $pass,
-    Commit   => 1
+    Commit   => 1,
+    TableName => 'sessions_perl',
 };
 
 ok tied(%{$session}), 'session tied';
@@ -56,7 +57,8 @@ tie %{$session}, $package, $id, {
     DataSource => $dsn, 
     UserName => $user, 
     Password => $pass,
-    Commit   => 1
+    Commit   => 1,
+    TableName => 'sessions_perl',
 };
 
 ok tied(%{$session}), 'session tied';
@@ -78,6 +80,7 @@ tie %{$session}, $package, $id, {
     Handle      => $dbh,
     Commit      => 0,
     LongReadLen => 20*2**10,
+    TableName => 'sessions_perl',
 };
 
 ok tied(%{$session}), 'session tied';
@@ -93,6 +96,7 @@ $session = {};
 tie %{$session}, $package, $id, {
     Handle => $dbh,
     Commit => 0,
+    TableName => 'sessions_perl',
 };
 
 ok tied(%{$session}), 'session tied';

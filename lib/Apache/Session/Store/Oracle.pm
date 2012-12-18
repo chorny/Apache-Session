@@ -29,6 +29,8 @@ sub connection {
     
     return if (defined $self->{dbh});
 
+	$self->{'table_name'} = $session->{args}->{TableName} || $Apache::Session::Store::DBI::TableName;
+
     if (exists $session->{args}->{Handle}) {
         $self->{dbh} = $session->{args}->{Handle};
         $self->{commit} = $session->{args}->{Commit};
@@ -69,7 +71,7 @@ sub materialize {
     if (!defined $self->{materialize_sth}) {
         $self->{materialize_sth} = 
             $self->{dbh}->prepare_cached(qq{
-                SELECT a_session FROM sessions WHERE id = ? FOR UPDATE});
+                SELECT a_session FROM $self->{'table_name'} WHERE id = ? FOR UPDATE});
     }
     
     $self->{materialize_sth}->bind_param(1, $session->{data}->{_session_id});
