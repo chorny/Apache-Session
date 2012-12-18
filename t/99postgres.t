@@ -1,20 +1,14 @@
+
 use Test::More;
 use Test::Deep;
-use Test::Exception;
-use File::Temp qw[tempdir];
-use Cwd qw[getcwd];
 
 plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
   unless $ENV{APACHE_SESSION_MAINTAINER};
 plan skip_all => "Optional modules (DBD::Pg, DBI) not installed"
   unless eval {
-               require DBI;
                require DBD::Pg;
+               require DBI;
               };
-
-my $origdir = getcwd;
-my $tempdir = tempdir( DIR => '.', CLEANUP => 1 );
-chdir( $tempdir );
 
 plan tests => 13;
 
@@ -23,7 +17,22 @@ use_ok $package;
 
 my $session = {};
 
-my ($dbname, $user, $pass) = ('sessions', 'postgres', '');
+my ($dbname, $user, $pass) = ('test', 'postgres', '');
+my $dsn = "dbi:Pg:database=$dbname";
+{
+
+    my $dbh1 = DBI->connect($dsn, $user, $pass, {RaiseError => 1, AutoCommit => 1, PrintError=>0, PrintWarn=>0,});
+    foreach my $table (qw/sessions s/) {
+        eval { $dbh1->do("DROP TABLE $table", {RaiseError => 0, PrintError=>0, PrintWarn=>0,});};
+        $dbh1->do(<<"EOT");
+ CREATE TABLE $table (
+    id char(32) not null primary key,
+    a_session text
+ )
+EOT
+    }
+}
+
 
 tie %{$session}, $package, undef, {
     DataSource => "dbi:Pg:dbname=$dbname",
@@ -97,5 +106,3 @@ tied(%{$session})->delete;
 untie %{$session};
 $dbh->commit;
 $dbh->disconnect;
-
-chdir( $origdir );
