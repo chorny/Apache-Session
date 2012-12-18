@@ -1,11 +1,8 @@
 use Test::More;
 use Test::Deep;
-#use Test::Exception;
-use File::Temp qw[tempdir];
-#use Cwd qw[getcwd];
 
-#plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-#  unless $ENV{APACHE_SESSION_MAINTAINER};
+plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+  unless $ENV{APACHE_SESSION_MAINTAINER};
 plan skip_all => "Optional modules (DBD::mysql, DBI, Test::Database) not installed"
   unless eval {
                require Test::Database;
