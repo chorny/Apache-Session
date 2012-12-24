@@ -2,4 +2,5 @@ language: perl
 perl:
   - "5.14"
 before_script:
-    - cpanm Test::Pod # optional dependency
+  - cpanm Test::Pod # optional dependency
+  - psql -c 'create database test;' -U postgres

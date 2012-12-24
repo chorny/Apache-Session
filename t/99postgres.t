@@ -3,7 +3,7 @@ use Test::More;
 use Test::Deep;
 
 plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless $ENV{APACHE_SESSION_MAINTAINER};
+  unless ($ENV{APACHE_SESSION_MAINTAINER} || $ENV{TRAVIS});
 plan skip_all => "Optional modules (DBD::Pg, DBI) not installed"
   unless eval {
                require DBD::Pg;
