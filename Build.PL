@@ -26,7 +26,7 @@ my $build = Module::Build->new(
     'Test::More' => '0.47',
     'Test::Exception' => '0.15',
     'Test::Deep' => '0.082',
-    ($ENV{TRAVIS}?('Test::Database'=>0):()),
+    ($ENV{TRAVIS}?('Test::Database'=>0, 'DBD::mysql'=>0, ):()),
   },
   'dist_author' => 'Casey West <casey[at]geeknest.com>',
   'module_name' => 'Apache::Session',

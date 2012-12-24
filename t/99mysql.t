@@ -10,6 +10,14 @@ plan skip_all => "Optional modules (DBD::mysql, DBI, Test::Database) not install
                require DBI;
               };
 
+if ($ENV{TRAVIS}) {
+    my $cfg = << 'EOT';
+    driver_dsn  = dbi:mysql:
+    username    = root
+EOT
+    Test::Database->load_config(\$cfg);
+}
+
 my @db_handles = Test::Database->handles('mysql');
 
 plan skip_all => "No mysql handle reported by Test::Database"
