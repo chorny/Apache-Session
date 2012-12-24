@@ -2,7 +2,7 @@ use Test::More;
 use Test::Deep;
 
 plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless $ENV{APACHE_SESSION_MAINTAINER};
+  unless ($ENV{APACHE_SESSION_MAINTAINER} || $ENV{TRAVIS});
 plan skip_all => "Optional modules (DBD::mysql, DBI, Test::Database) not installed"
   unless eval {
                require Test::Database;
@@ -27,10 +27,10 @@ my $upass = $mysql->password();
 diag "Mysql version ".$mysql->driver->version;
 
 {
-    my $dbh = $mysql->dbh();
+    my $dbh1 = $mysql->dbh();
     foreach my $table (qw/sessions s/) {
-        $dbh->do("DROP TABLE IF EXISTS $table");
-        $dbh->do(<<"EOT");
+        $dbh1->do("DROP TABLE IF EXISTS $table");
+        $dbh1->do(<<"EOT");
   CREATE TABLE $table (
     id char(32) not null primary key,
     a_session text
