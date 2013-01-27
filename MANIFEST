@@ -20,6 +20,7 @@ lib/Apache/Session/Lock/Null.pm
 lib/Apache/Session/Lock/Semaphore.pm
 lib/Apache/Session/Lock/Sybase.pm
 lib/Apache/Session/MySQL.pm
+lib/Apache/Session/MySQL/NoLock.pm
 lib/Apache/Session/Oracle.pm
 lib/Apache/Session/Postgres.pm
 lib/Apache/Session/Serialize/Base64.pm
@@ -64,3 +65,4 @@ t/99semaphore.t
 t/99storable.t
 t/99uue.t
 t/pod.t
+META.json

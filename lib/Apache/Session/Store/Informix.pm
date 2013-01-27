@@ -17,7 +17,7 @@ use Apache::Session::Store::DBI;
 use vars qw(@ISA $VERSION);
 
 @ISA = qw(Apache::Session::Store::DBI);
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 $Apache::Session::Store::Informix::DataSource = undef;
 $Apache::Session::Store::Informix::UserName   = undef;

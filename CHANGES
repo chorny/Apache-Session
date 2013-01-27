@@ -3,8 +3,9 @@ If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
 and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
-1.90
+1.90   2013-01-27 by Alexandr Ciornii, Perl 25th birthday version
   - Allow specifying table for Oracle
+  - Use Test::Database for tests
 
 1.89   2010-09-22  by Alexandr Ciornii
   - require Digest::MD5

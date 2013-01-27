@@ -1,12 +1,13 @@
 ---
-abstract: 'A persistence framework for session data'
+abstract: A persistence framework for session data
 author:
   - 'Casey West <casey[at]geeknest.com>'
 build_requires:
   Test::Deep: 0.082
   Test::Exception: 0.15
   Test::More: 0.47
-generated_by: 'Module::Build version 0.3614'
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4003, CPAN::Meta::Converter version 2.112150'
 keywords:
   - CGI
   - session
@@ -19,7 +20,7 @@ name: Apache-Session
 provides:
   Apache::Session:
     file: lib/Apache/Session.pm
-    version: 1.89
+    version: 1.90
   Apache::Session::DB_File:
     file: lib/Apache/Session/DB_File.pm
     version: 1.01
@@ -59,6 +60,9 @@ provides:
   Apache::Session::MySQL:
     file: lib/Apache/Session/MySQL.pm
     version: 1.01
+  Apache::Session::MySQL::NoLock:
+    file: lib/Apache/Session/MySQL/NoLock.pm
+    version: 0.01
   Apache::Session::Oracle:
     file: lib/Apache/Session/Oracle.pm
     version: 1.01
@@ -88,13 +92,13 @@ provides:
     version: 1.04
   Apache::Session::Store::Informix:
     file: lib/Apache/Session/Store/Informix.pm
-    version: 1.01
+    version: 1.02
   Apache::Session::Store::MySQL:
     file: lib/Apache/Session/Store/MySQL.pm
     version: 1.04
   Apache::Session::Store::Oracle:
     file: lib/Apache/Session/Store/Oracle.pm
-    version: 1.01
+    version: 1.10
   Apache::Session::Store::Postgres:
     file: lib/Apache/Session/Store/Postgres.pm
     version: 1.03
@@ -114,4 +118,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/chorny/Apache-Session
-version: 1.89
+version: 1.90
