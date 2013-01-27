@@ -1,9 +1,9 @@
 use Test::More;
 use Test::Deep;
 
-plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless ($ENV{APACHE_SESSION_MAINTAINER} || $ENV{TRAVIS});
-plan skip_all => "Optional modules (DBD::mysql, DBI, Test::Database) not installed"
+#plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+#  unless ($ENV{APACHE_SESSION_MAINTAINER} || $ENV{TRAVIS});
+plan skip_all => "Optional modules (Test::Database, DBD::mysql, DBI) not installed"
   unless eval {
                require Test::Database;
                require DBD::mysql;
@@ -34,10 +34,18 @@ my $uname = $mysql->username();
 my $upass = $mysql->password();
 diag "Mysql version ".$mysql->driver->version;
 
+my @tables_used = qw/sessions s/;
+sub drop_tables {
+    my $dbh = shift;
+    foreach my $table (@_) {
+        $dbh->do("DROP TABLE IF EXISTS $table");
+    }
+}
+
 {
     my $dbh1 = $mysql->dbh();
-    foreach my $table (qw/sessions s/) {
-        $dbh1->do("DROP TABLE IF EXISTS $table");
+    drop_tables($dbh1, @tables_used);
+    foreach my $table (@tables_used) {
         $dbh1->do(<<"EOT");
   CREATE TABLE $table (
     id char(32) not null primary key,
@@ -126,3 +134,9 @@ cmp_deeply $session->{baz}, $baz, "Baz matches";
 tied(%{$session})->delete;
 untie %{$session};
 $dbh->disconnect;
+
+unless ($ENV{TRAVIS}) {
+    my $dbh1 = $mysql->dbh();
+    drop_tables($dbh1, @tables_used);
+}
+
