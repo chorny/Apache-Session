@@ -1,23 +1,42 @@
 use Test::More;
 
-plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
-  unless $ENV{APACHE_SESSION_MAINTAINER};
-plan skip_all => "Optional modules (DBD::mysql, DBI) not installed"
+#plan skip_all => "Not running RDBM tests without APACHE_SESSION_MAINTAINER=1"
+#  unless $ENV{APACHE_SESSION_MAINTAINER};
+plan skip_all => "Optional modules (Test::Database, DBD::mysql, DBI) not installed"
   unless eval {
+               require Test::Database;
                require DBD::mysql;
                require DBI;
               };
+
+if ($ENV{TRAVIS}) {
+    my $cfg = << 'EOT';
+    driver_dsn  = dbi:mysql:
+    username    = root
+EOT
+    Test::Database->load_config(\$cfg);
+}
+
+my @db_handles = Test::Database->handles('mysql');
+
+plan skip_all => "No mysql handle reported by Test::Database"
+  unless @db_handles;
 
 plan tests => 4;
 
 my $package = 'Apache::Session::Lock::MySQL';
 use_ok $package;
 
+my $mysql = $db_handles[0];
+my $dsn = $mysql->dsn();
+my $uname = $mysql->username();
+my $upass = $mysql->password();
+
 my $session = {
     args => {
-        LockDataSource => 'dbi:mysql:test',
-        LockUserName   => 'test',
-        LockPassword   => ''
+        LockDataSource => $dsn,
+        LockUserName   => $uname,
+        LockPassword   => $upass,
     },
     data => {
         _session_id => '09876543210987654321098765432109',
@@ -25,7 +44,7 @@ my $session = {
 };
 
 my $lock = $package->new;
-my $dbh  = DBI->connect('dbi:mysql:test', 'test', '', {RaiseError => 1});
+my $dbh  = DBI->connect($dsn, $uname, $upass, {RaiseError => 1});
 my $sth  = $dbh->prepare(q{SELECT GET_LOCK('Apache-Session-09876543210987654321098765432109', 0)});
 my $sth2 = $dbh->prepare(q{SELECT RELEASE_LOCK('Apache-Session-09876543210987654321098765432109')});
 
