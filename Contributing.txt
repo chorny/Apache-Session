@@ -1,6 +1,6 @@
 If you want better support for older Perls, use CPAN::Reporter (Test::Reporter for CPANPLUS).
 Also you can run cpan smoking. That way module can be fixed even before
-you'll find that you need it. See CPAN::YACSmoke.
+you'll find that you need it. See CPAN::Reporter::Smoker.
 
 
 Generally, you should use Test::Reporter - it's the only way to measure popularity
