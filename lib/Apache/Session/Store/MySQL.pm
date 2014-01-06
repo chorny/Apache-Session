@@ -95,13 +95,13 @@ called 'sessions', or another table name if you provide the TableName
 argument:
 
  id char(32)     # or however long your session IDs are.
- a_session text
+ a_session blob  # or varbinary if you plan to use a big session (>64k after serialization)
 
 To create this schema, you can execute this command using the mysql program:
 
  CREATE TABLE sessions (
     id char(32) not null primary key,
-    a_session text
+    a_session blob
  );
 
 If you use some other command, ensure that there is a unique index on the
