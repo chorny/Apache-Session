@@ -37,8 +37,13 @@ diag "Mysql version ".$mysql->driver->version;
 my @tables_used = qw/sessions s/;
 sub drop_tables {
     my $dbh = shift;
-    foreach my $table (@_) {
-        $dbh->do("DROP TABLE IF EXISTS $table");
+    my $dblist = join(', ', @_);
+    my $res = $dbh->do("DROP TABLE IF EXISTS $dblist");
+    if (!defined $res and $dbh->errstr =~ /Cannot delete or update a parent row: a foreign key constraint/) {
+      my $ary_ref = $dbh->selectcol_arrayref('SHOW TABLES');
+      $dblist = join(', ', @$ary_ref);
+      diag "Found foreign key constraint, trying to drop all tables from DB";
+      $dbh->do("DROP TABLE IF EXISTS $dblist");
     }
 }
 
