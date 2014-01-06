@@ -8,6 +8,8 @@ print << 'EOT';
 Please use Test::Reporter to report test results - it's the only way to measure
 popularity of distribution.
 
+Or you can add it to stack (means that you use it) on Ohloh: https://www.ohloh.net/p/Apache-Session
+
 EOT
 
 if ($]<5.006) {

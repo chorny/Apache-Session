@@ -7,7 +7,7 @@
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.86
+This is Apache::Session 1.91
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
@@ -21,6 +21,9 @@ Apache::Session is Copyright (c) 1998, 1999, 2000, 2001, 2004  Jeffrey William
 Baker <jwbaker@acm.org>.  Distribute under the same terms as Perl itself.
 
 Apache::Session is Copyright (c) 2004-2006 Casey West, <casey@geeknest.com>.
+Disribute under the same terms as Perl itself.
+
+Apache::Session is Copyright (c) 2007-2014 Alexandr Ciornii.
 Disribute under the same terms as Perl itself.
 
 PREREQUISITES
@@ -43,8 +46,8 @@ Use CPAN's or CPANPLUS's shell.
 Manual:
 
 
-tar -xvzf Apache-Session-1.86.tar.gz
-cd Apache-Session-1.86
+tar -xvzf Apache-Session-1.91.tar.gz
+cd Apache-Session-1.91
 perl Makefile.PL
 make
 make test
