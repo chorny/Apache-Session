@@ -43,7 +43,10 @@ sub drop_tables {
       my $ary_ref = $dbh->selectcol_arrayref('SHOW TABLES');
       $dblist = join(', ', @$ary_ref);
       diag "Found foreign key constraint, trying to drop all tables from DB";
+      
+      $dbh->do("SET foreign_key_checks = 0");
       $dbh->do("DROP TABLE IF EXISTS $dblist");
+      $dbh->do("SET foreign_key_checks = 1");
     }
 }
 
