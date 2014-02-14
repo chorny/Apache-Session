@@ -33,6 +33,7 @@ my $dsn = $mysql->dsn();
 my $uname = $mysql->username();
 my $upass = $mysql->password();
 diag "Mysql version ".$mysql->driver->version;
+diag "DBD::mysql version ".DBD::mysql->VERSION();
 
 my @tables_used = qw/sessions s/;
 sub drop_tables {
