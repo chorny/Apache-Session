@@ -3,6 +3,9 @@ If you use perl older than 5.6 - write to alexchorny[AT]gmail.com
 and tell me what version do you use, why and will you need newer versions
 of Apache::Session.
 
+1.92  2014-03-08
+  - more test fixes
+
 1.91  2014-01-07 by Alexandr Ciornii, Perl 26th birthday version
   - Add a test for RT#50896
   - 99mysql.t will work more correctly in some corner cases
