@@ -27,17 +27,21 @@ my @db_handles = Test::Database->handles('mysql');
 plan skip_all => "No mysql handle reported by Test::Database"
   unless @db_handles;
 
-plan tests => 23;
-
-my $package = 'Apache::Session::MySQL';
-use_ok $package;
-
 my $mysql = $db_handles[0];
 my $dsn = $mysql->dsn();
 my $uname = $mysql->username();
 my $upass = $mysql->password();
-diag "Mysql version ".$mysql->driver->version;
 diag "DBD::mysql version ".DBD::mysql->VERSION();
+
+plan skip_all => "Test::Database handle->driver is undef"
+  if !defined($mysql->driver);
+
+diag "Mysql version ".$mysql->driver->version;
+
+plan tests => 23;
+
+my $package = 'Apache::Session::MySQL';
+use_ok $package;
 
 my @tables_used = qw/sessions s/;
 sub drop_tables {
