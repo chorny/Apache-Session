@@ -11,8 +11,8 @@ plan skip_all => "Optional modules (Test::Database, DBD::mysql, DBI) not install
               };
 
 my $dbd_mysq_ver = DBD::mysql->VERSION();
-plan skip_all => "Version $dbd_mysq_ver of DBD::mysql has serious problems"
-  if $dbd_mysq_ver >= '4.021' && $dbd_mysq_ver <= '4.023';
+plan skip_all => "Version $dbd_mysq_ver of DBD::mysql has serious problems on Windows"
+  if ($^O eq 'MSWin32' && $dbd_mysq_ver >= '4.021' && $dbd_mysq_ver <= '4.023');
 
 if ($ENV{TRAVIS}) {
     my $cfg = << 'EOT';
