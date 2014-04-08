@@ -33,7 +33,7 @@ my $uname = $mysql->username();
 my $upass = $mysql->password();
 diag "DBD::mysql version ".DBD::mysql->VERSION();
 
-plan skip_all => "Test::Database handle->driver is undef"
+plan skip_all => "Test::Database handle->driver is undef. Probably it was not possible to establish connection."
   if !defined($mysql->driver);
 
 diag "Mysql version ".$mysql->driver->version;
