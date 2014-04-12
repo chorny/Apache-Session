@@ -7,7 +7,7 @@
 DESCRIPTION
 -----------
 
-This is Apache::Session 1.91
+This is Apache::Session 1.93
 
 These modules provide persistent storage for arbitrary data, in arbitrary
 backing stores.  The details of interacting with the backing store are
