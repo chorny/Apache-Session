@@ -22,15 +22,19 @@ my @db_handles = Test::Database->handles('mysql');
 plan skip_all => "No mysql handle reported by Test::Database"
   unless @db_handles;
 
-plan tests => 4;
-
-my $package = 'Apache::Session::Lock::MySQL';
-use_ok $package;
-
 my $mysql = $db_handles[0];
 my $dsn = $mysql->dsn();
 my $uname = $mysql->username();
 my $upass = $mysql->password();
+
+my $dbh  = DBI->connect($dsn, $uname, $upass);
+plan skip_all => "Cannot connect to DB specified in Test::Database config"
+  unless $dbh;
+
+plan tests => 4;
+
+my $package = 'Apache::Session::Lock::MySQL';
+use_ok $package;
 
 my $session = {
     args => {
@@ -44,7 +48,6 @@ my $session = {
 };
 
 my $lock = $package->new;
-my $dbh  = DBI->connect($dsn, $uname, $upass, {RaiseError => 1});
 my $sth  = $dbh->prepare(q{SELECT GET_LOCK('Apache-Session-09876543210987654321098765432109', 0)});
 my $sth2 = $dbh->prepare(q{SELECT RELEASE_LOCK('Apache-Session-09876543210987654321098765432109')});
 
