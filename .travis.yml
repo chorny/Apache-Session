@@ -4,6 +4,10 @@ perl:
 services:
   - mysql
   - postgresql
+addons:
+  apt:
+    packages:
+      - libdb-dev
 before_script:
   - cpanm Test::Pod DB_File # optional dependencies
   - psql -c 'create database test;' -U postgres
