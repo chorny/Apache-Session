@@ -14,7 +14,7 @@ use strict;
 use DBI;
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 sub new {
     my $class = shift;
