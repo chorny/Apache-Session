@@ -1,12 +1,12 @@
 Build.bat
 Build
-Makefile.PL
 _build
-Apache-Session-*
-blib
-*.tmp
+Makefile.PL
 Makefile
 pm_to_blib
+blib
+*.tmp
 META.*
 MYMETA.*
 1
+Apache-Session-*
