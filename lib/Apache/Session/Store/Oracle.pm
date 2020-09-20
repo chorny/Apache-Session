@@ -130,13 +130,13 @@ To use this module, you will need at least these columns in a table
 called 'sessions':
 
  id varchar2(32)     # or however long your session IDs are.
- a_session long
+ a_session clob 
 
 To create this schema, you can execute this command using the sqlplus program:
 
  CREATE TABLE sessions (
     id varchar2(32) not null primary key,
-    a_session long
+    a_session clob
  );
 
 If you use some other command, ensure that there is a unique index on the
